@@ -2,20 +2,25 @@ package net.mellow.effortless.items;
 
 import java.util.List;
 
+import org.lwjgl.opengl.GL11;
+
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-public class ItemBuildingGadget extends Item {
+public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     public static enum BuildingMode {
         EXTENDED, // greater reach
@@ -131,6 +136,87 @@ public class ItemBuildingGadget extends Item {
         stack.stackTagCompound.removeTag("x");
         stack.stackTagCompound.removeTag("y");
         stack.stackTagCompound.removeTag("z");
+    }
+
+    @Override
+    public void render(World world, EntityPlayer player, ItemStack stack, float partialTicks) {
+        BlockPos from = getFromPosition(stack);
+        if (from != null) {
+
+			MovingObjectPosition mop = Minecraft.getMinecraft().objectMouseOver;
+			ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
+			int iX = mop.blockX + dir.offsetX;
+			int iY = mop.blockY + dir.offsetY;
+			int iZ = mop.blockZ + dir.offsetZ;
+            
+            double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
+            double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
+            double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
+
+            double minX = Math.min(from.x, iX) + 0.125;
+			double maxX = Math.max(from.x, iX) + 0.875;
+			double minY = Math.min(from.y, iY) + 0.125;
+			double maxY = Math.max(from.y, iY) + 0.875;
+			double minZ = Math.min(from.z, iZ) + 0.125;
+			double maxZ = Math.max(from.z, iZ) + 0.875;
+            
+            GL11.glPushMatrix();
+            GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glDisable(GL11.GL_TEXTURE_2D);
+            GL11.glColor3f(1F, 1F, 1F);
+            
+            Tessellator tess = Tessellator.instance;
+            tess.setTranslation(-dx, -dy, -dz);
+            tess.startDrawing(GL11.GL_LINES);
+            tess.setBrightness(240);
+            tess.setColorRGBA_F(1F, 1F, 1F, 1F);
+            
+            // top
+            tess.addVertex(minX, maxY, minZ);
+            tess.addVertex(minX, maxY, maxZ);
+            
+            tess.addVertex(minX, maxY, maxZ);
+            tess.addVertex(maxX, maxY, maxZ);
+            
+            tess.addVertex(maxX, maxY, maxZ);
+            tess.addVertex(maxX, maxY, minZ);
+
+            tess.addVertex(maxX, maxY, minZ);
+            tess.addVertex(minX, maxY, minZ);
+            
+            // bottom
+            tess.addVertex(minX, minY, minZ);
+            tess.addVertex(minX, minY, maxZ);
+            
+            tess.addVertex(minX, minY, maxZ);
+            tess.addVertex(maxX, minY, maxZ);
+            
+            tess.addVertex(maxX, minY, maxZ);
+            tess.addVertex(maxX, minY, minZ);
+
+            tess.addVertex(maxX, minY, minZ);
+            tess.addVertex(minX, minY, minZ);
+
+            // sides
+            tess.addVertex(minX, minY, minZ);
+            tess.addVertex(minX, maxY, minZ);
+
+            tess.addVertex(maxX, minY, minZ);
+            tess.addVertex(maxX, maxY, minZ);
+
+            tess.addVertex(maxX, minY, maxZ);
+            tess.addVertex(maxX, maxY, maxZ);
+
+            tess.addVertex(minX, minY, maxZ);
+            tess.addVertex(minX, maxY, maxZ);
+            
+            tess.draw();
+            tess.setTranslation(0, 0, 0);
+            
+            GL11.glEnable(GL11.GL_TEXTURE_2D);
+            GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glPopMatrix();
+        }
     }
 
 }
