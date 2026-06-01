@@ -1,5 +1,8 @@
 package net.mellow.effortless.blocks;
 
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
+
 public class BlockPos implements Comparable<BlockPos> {
 
     public int x;
@@ -10,6 +13,14 @@ public class BlockPos implements Comparable<BlockPos> {
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+
+    public static BlockPos containing(Vec3 vec) {
+        return new BlockPos(MathHelper.floor_double(vec.xCoord), MathHelper.floor_double(vec.yCoord), MathHelper.floor_double(vec.zCoord));
+    }
+
+    public BlockPos subtract(BlockPos pos) {
+        return new BlockPos(x - pos.x, y - pos.y, z - pos.z);
     }
 
     @Override

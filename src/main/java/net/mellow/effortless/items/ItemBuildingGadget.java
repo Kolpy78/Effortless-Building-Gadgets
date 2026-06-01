@@ -1,5 +1,6 @@
 package net.mellow.effortless.items;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.lwjgl.opengl.GL11;
@@ -8,15 +9,15 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.buildmode.BuildModes;
 import net.minecraft.block.Block;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -141,24 +142,26 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
     @Override
     public void render(World world, EntityPlayer player, ItemStack stack, float partialTicks) {
         BlockPos from = getFromPosition(stack);
-        if (from != null) {
 
-			MovingObjectPosition mop = Minecraft.getMinecraft().objectMouseOver;
-			ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
-			int iX = mop.blockX + dir.offsetX;
-			int iY = mop.blockY + dir.offsetY;
-			int iZ = mop.blockZ + dir.offsetZ;
+        if (from != null) {
+            BlockPos to = findLine(player, from, true);
+
+            if (to == null) return;
+
+            // MovingObjectPosition mop = Minecraft.getMinecraft().objectMouseOver;
+            // ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
+            // BlockPos to = new BlockPos(mop.blockX + dir.offsetX, mop.blockY + dir.offsetY, mop.blockZ + dir.offsetZ);
             
             double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
             double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
             double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
 
-            double minX = Math.min(from.x, iX) + 0.125;
-			double maxX = Math.max(from.x, iX) + 0.875;
-			double minY = Math.min(from.y, iY) + 0.125;
-			double maxY = Math.max(from.y, iY) + 0.875;
-			double minZ = Math.min(from.z, iZ) + 0.125;
-			double maxZ = Math.max(from.z, iZ) + 0.875;
+            double minX = Math.min(from.x, to.x) + 0.125;
+            double maxX = Math.max(from.x, to.x) + 0.875;
+            double minY = Math.min(from.y, to.y) + 0.125;
+            double maxY = Math.max(from.y, to.y) + 0.875;
+            double minZ = Math.min(from.z, to.z) + 0.125;
+            double maxZ = Math.max(from.z, to.z) + 0.875;
             
             GL11.glPushMatrix();
             GL11.glDisable(GL11.GL_LIGHTING);
@@ -217,6 +220,99 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
             GL11.glDisable(GL11.GL_LIGHTING);
             GL11.glPopMatrix();
         }
+    }
+
+    
+
+    public static BlockPos findLine(EntityPlayer player, BlockPos firstPos, boolean skipRaytrace) {
+        Vec3 look = BuildModes.getPlayerLookVec(player);
+        Vec3 start = Vec3.createVectorHelper(player.posX, player.posY + player.getEyeHeight(), player.posZ);
+
+        List<Criteria> criteriaList = new ArrayList<>(3);
+
+        //X
+        Vec3 xBound = BuildModes.findXBound(firstPos.x, start, look);
+        criteriaList.add(new Criteria(xBound, firstPos, start));
+
+        //Y
+        Vec3 yBound = BuildModes.findYBound(firstPos.y, start, look);
+        criteriaList.add(new Criteria(yBound, firstPos, start));
+
+        //Z
+        Vec3 zBound = BuildModes.findZBound(firstPos.z, start, look);
+        criteriaList.add(new Criteria(zBound, firstPos, start));
+
+        //Remove invalid criteria
+        // int reach = CapabilityHandler.getBuildModeReach(player);
+        int reach = 32;
+        criteriaList.removeIf(criteria -> !criteria.isValid(start, look, reach, player, skipRaytrace));
+
+        //If none are valid, return empty list of blocks
+        if (criteriaList.isEmpty()) return null;
+
+        //If only 1 is valid, choose that one
+        Criteria selected = criteriaList.get(0);
+
+        //If multiple are valid, choose based on criteria
+        if (criteriaList.size() > 1) {
+            //Select the one that is closest (from wall position to its line counterpart)
+            for (int i = 1; i < criteriaList.size(); i++) {
+                Criteria criteria = criteriaList.get(i);
+                if (criteria.distToLineSq < 2.0 && selected.distToLineSq < 2.0) {
+                    //Both very close to line, choose closest to player
+                    if (criteria.distToPlayerSq < selected.distToPlayerSq)
+                        selected = criteria;
+                } else {
+                    //Pick closest to line
+                    if (criteria.distToLineSq < selected.distToLineSq)
+                        selected = criteria;
+                }
+            }
+
+        }
+
+        return BlockPos.containing(selected.lineBound);
+    }
+
+    static class Criteria {
+        Vec3 planeBound;
+        Vec3 lineBound;
+        double distToLineSq;
+        double distToPlayerSq;
+
+        Criteria(Vec3 planeBound, BlockPos firstPos, Vec3 start) {
+            this.planeBound = planeBound;
+            this.lineBound = toLongestLine(this.planeBound, firstPos);
+            this.distToLineSq = this.lineBound.squareDistanceTo(this.planeBound);
+            this.distToPlayerSq = this.planeBound.squareDistanceTo(start);
+        }
+
+        //Make it from a plane into a line
+        //Select the axis that is longest
+        private Vec3 toLongestLine(Vec3 boundVec, BlockPos firstPos) {
+            BlockPos bound = BlockPos.containing(boundVec);
+
+            BlockPos firstToSecond = bound.subtract(firstPos);
+            firstToSecond = new BlockPos(Math.abs(firstToSecond.x), Math.abs(firstToSecond.y), Math.abs(firstToSecond.z));
+            int longest = Math.max(firstToSecond.x, Math.max(firstToSecond.y, firstToSecond.z));
+            if (longest == firstToSecond.x) {
+                return Vec3.createVectorHelper(bound.x, firstPos.y, firstPos.z);
+            }
+            if (longest == firstToSecond.y) {
+                return Vec3.createVectorHelper(firstPos.x, bound.y, firstPos.z);
+            }
+            if (longest == firstToSecond.z) {
+                return Vec3.createVectorHelper(firstPos.x, firstPos.y, bound.z);
+            }
+            return null;
+        }
+
+        //check if its not behind the player and its not too close and not too far
+        //also check if raytrace from player to block does not intersect blocks
+        public boolean isValid(Vec3 start, Vec3 look, int reach, EntityPlayer player, boolean skipRaytrace) {
+            return BuildModes.isCriteriaValid(start, look, reach, player, skipRaytrace, lineBound, planeBound, distToPlayerSq);
+        }
+
     }
 
 }
