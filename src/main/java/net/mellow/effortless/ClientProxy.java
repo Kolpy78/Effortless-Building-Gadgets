@@ -1,4 +1,4 @@
-package com.myname.mymodid;
+package net.mellow.effortless;
 
 public class ClientProxy extends CommonProxy {
 
