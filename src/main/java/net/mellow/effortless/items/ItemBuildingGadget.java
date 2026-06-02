@@ -22,7 +22,7 @@ import net.minecraft.world.World;
 public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     public static enum BuildingMode {
-        // EXTENDED(new Extended()), // greater reach
+        EXTENDED(new Extended()), // greater reach
         LINE(new Line()); // lines
         // WALL(new Wall()), // walls
         // FLOOR(new Floor()); // floors
