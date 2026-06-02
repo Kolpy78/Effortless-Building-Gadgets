@@ -2,17 +2,13 @@ package net.mellow.effortless.items;
 
 import java.util.List;
 
-import org.lwjgl.opengl.GL11;
-
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.mellow.effortless.blocks.BlockMeta;
-import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.mellow.effortless.buildmode.modes.*;
 import net.minecraft.block.Block;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -20,18 +16,16 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
 
 public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     public static enum BuildingMode {
-        EXTENDED(new Extended()), // greater reach
-        LINE(new Line()), // lines
-        WALL(new Wall()), // walls
-        FLOOR(new Floor()); // floors
+        // EXTENDED(new Extended()), // greater reach
+        LINE(new Line()); // lines
+        // WALL(new Wall()), // walls
+        // FLOOR(new Floor()); // floors
 
         public BaseBuildMode handler;
 
@@ -45,14 +39,11 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> list, boolean bool) {
         BlockMeta selected = getSelected(stack);
         BuildingMode mode = getMode(stack);
-        BlockPos from = getFromPosition(stack);
 
         list.add("mode:  " + mode);
 
         list.add("block: " + selected.block.getUnlocalizedName());
         list.add("meta:  " + selected.meta);
-
-        if (from != null) list.add("from:  " + from);
     }
 
     // IF WE PUT ROCKS IN THE SHAPE OF A RUNWAY GOD WILL GIVE US HIGH-FRUCTOSE CORN SYRUP
@@ -63,11 +54,9 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-        int reach = 32;
-        Vec3 look = BuildModes.getPlayerLookVec(player);
-        Vec3 start = Vec3.createVectorHelper(player.posX, player.posY + player.getEyeHeight(), player.posZ);
-        Vec3 end = start.addVector(look.xCoord * reach, look.yCoord * reach, look.zCoord * reach);
-        MovingObjectPosition mop = world.rayTraceBlocks(start, end);
+        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+
+        MovingObjectPosition mop = BuildModes.getMop(player, 32);
 
         if (player.isSneaking()) {
             if (!world.isRemote) {
@@ -86,46 +75,22 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
                     int mode = getMode(stack).ordinal();
                     mode += 1;
                     if (mode >= BuildingMode.values().length) mode = 0;
+
+                    getMode(stack).handler.clear(stack);
                     setMode(stack, BuildingMode.values()[mode]);
                 }
             }
         } else {
-            BlockPos from = getFromPosition(stack);
-
-            if (from == null) {
-                if (mop == null || mop.typeOfHit != MovingObjectType.BLOCK) return stack;
-
-                int x = mop.blockX;
-                int y = mop.blockY;
-                int z = mop.blockZ;
-                int side = mop.sideHit;
-
-                ForgeDirection dir = ForgeDirection.getOrientation(side);
-                BlockPos pos = new BlockPos(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ);
-
-                setFromPosition(stack, pos);
-            } else {
-                BlockPos to = Line.findLine(player, from, true);
-
-                build(world, getSelected(stack), from, to);
-                clearFromPosition(stack);
-            }
+            BuildingMode mode = getMode(stack);
+            mode.handler.add(stack, getSelected(stack), world, player, mop);
         }
 
         return stack;
     }
 
-    public static void build(World world, BlockMeta selected, BlockPos from, BlockPos to) {
-        for (int x = Math.min(from.x, to.x); x <= Math.max(from.x, to.x); x++)
-        for (int y = Math.min(from.y, to.y); y <= Math.max(from.y, to.y); y++)
-        for (int z = Math.min(from.z, to.z); z <= Math.max(from.z, to.z); z++) {
-            world.setBlock(x, y, z, selected.block, selected.meta, 3);
-        }
-    }
-
     @Override
     public boolean onEntitySwing(EntityLivingBase entityLiving, ItemStack stack) {
-        clearFromPosition(stack);
+        getMode(stack).handler.clear(stack);
         return false;
     }
 
@@ -142,10 +107,14 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
     }
 
 
-    // mode is stored as a string so inserting won't get funky with existing tools
+    // mode is stored as a string so inserting new modes won't fuck up existing tools
     public static BuildingMode getMode(ItemStack stack) {
-        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("mode")) return BuildingMode.EXTENDED;
-        return BuildingMode.valueOf(stack.stackTagCompound.getString("mode"));
+        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("mode")) return BuildingMode.LINE;
+        try {
+            return BuildingMode.valueOf(stack.stackTagCompound.getString("mode"));
+        } catch (IllegalArgumentException ex) {
+            return BuildingMode.LINE;
+        }
     }
 
     public static void setMode(ItemStack stack, BuildingMode mode) {
@@ -154,104 +123,9 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
     }
 
 
-    public static BlockPos getFromPosition(ItemStack stack) {
-        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("pos0"))
-            return null;
-
-        return BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
-    }
-
-    public static void setFromPosition(ItemStack stack, BlockPos pos) {
-        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
-        stack.stackTagCompound.setTag("pos0", pos.save());
-    }
-
-    public static void clearFromPosition(ItemStack stack) {
-        stack.stackTagCompound.removeTag("pos0");
-    }
-
-
     @Override
     public void render(World world, EntityPlayer player, ItemStack stack, float partialTicks) {
-        BlockPos from = getFromPosition(stack);
-
-        if (from != null) {
-            BlockPos to = Line.findLine(player, from, true);
-
-            if (to == null) return;
-
-            // MovingObjectPosition mop = Minecraft.getMinecraft().objectMouseOver;
-            // ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
-            // BlockPos to = new BlockPos(mop.blockX + dir.offsetX, mop.blockY + dir.offsetY, mop.blockZ + dir.offsetZ);
-            
-            double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
-            double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
-            double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
-
-            double minX = Math.min(from.x, to.x) + 0.125;
-            double maxX = Math.max(from.x, to.x) + 0.875;
-            double minY = Math.min(from.y, to.y) + 0.125;
-            double maxY = Math.max(from.y, to.y) + 0.875;
-            double minZ = Math.min(from.z, to.z) + 0.125;
-            double maxZ = Math.max(from.z, to.z) + 0.875;
-            
-            GL11.glPushMatrix();
-            GL11.glDisable(GL11.GL_LIGHTING);
-            GL11.glDisable(GL11.GL_TEXTURE_2D);
-            GL11.glColor3f(1F, 1F, 1F);
-            
-            Tessellator tess = Tessellator.instance;
-            tess.setTranslation(-dx, -dy, -dz);
-            tess.startDrawing(GL11.GL_LINES);
-            tess.setBrightness(240);
-            tess.setColorRGBA_F(1F, 1F, 1F, 1F);
-            
-            // top
-            tess.addVertex(minX, maxY, minZ);
-            tess.addVertex(minX, maxY, maxZ);
-            
-            tess.addVertex(minX, maxY, maxZ);
-            tess.addVertex(maxX, maxY, maxZ);
-            
-            tess.addVertex(maxX, maxY, maxZ);
-            tess.addVertex(maxX, maxY, minZ);
-
-            tess.addVertex(maxX, maxY, minZ);
-            tess.addVertex(minX, maxY, minZ);
-            
-            // bottom
-            tess.addVertex(minX, minY, minZ);
-            tess.addVertex(minX, minY, maxZ);
-            
-            tess.addVertex(minX, minY, maxZ);
-            tess.addVertex(maxX, minY, maxZ);
-            
-            tess.addVertex(maxX, minY, maxZ);
-            tess.addVertex(maxX, minY, minZ);
-
-            tess.addVertex(maxX, minY, minZ);
-            tess.addVertex(minX, minY, minZ);
-
-            // sides
-            tess.addVertex(minX, minY, minZ);
-            tess.addVertex(minX, maxY, minZ);
-
-            tess.addVertex(maxX, minY, minZ);
-            tess.addVertex(maxX, maxY, minZ);
-
-            tess.addVertex(maxX, minY, maxZ);
-            tess.addVertex(maxX, maxY, maxZ);
-
-            tess.addVertex(minX, minY, maxZ);
-            tess.addVertex(minX, maxY, maxZ);
-            
-            tess.draw();
-            tess.setTranslation(0, 0, 0);
-            
-            GL11.glEnable(GL11.GL_TEXTURE_2D);
-            GL11.glDisable(GL11.GL_LIGHTING);
-            GL11.glPopMatrix();
-        }
+        getMode(stack).handler.render(stack, world, player, partialTicks);
     }
 
 }

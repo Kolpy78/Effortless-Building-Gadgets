@@ -1,9 +1,18 @@
 package net.mellow.effortless.buildmode;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 
 public class BuildModes {
+
+    public static MovingObjectPosition getMop(EntityPlayer player, int reach) {
+        Vec3 look = BuildModes.getPlayerLookVec(player);
+        Vec3 start = Vec3.createVectorHelper(player.posX, player.posY + player.getEyeHeight(), player.posZ);
+        Vec3 end = start.addVector(look.xCoord * reach, look.yCoord * reach, look.zCoord * reach);
+
+        return player.worldObj.rayTraceBlocks(start, end);
+    }
 
     //Find coordinates on a line bound by a plane
     public static Vec3 findXBound(double x, Vec3 start, Vec3 look) {

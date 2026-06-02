@@ -2,7 +2,10 @@ package net.mellow.effortless.blocks;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
+import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockPos implements Comparable<BlockPos> {
 
@@ -17,6 +20,7 @@ public class BlockPos implements Comparable<BlockPos> {
     }
 
     public static BlockPos load(NBTTagCompound tag) {
+        if (tag == null || !tag.hasKey("x") || !tag.hasKey("y") || !tag.hasKey("z")) return null;
         int x = tag.getInteger("x");
         int y = tag.getInteger("y");
         int z = tag.getInteger("z");
@@ -29,6 +33,17 @@ public class BlockPos implements Comparable<BlockPos> {
         tag.setInteger("y", y);
         tag.setInteger("z", z);
         return tag;
+    }
+
+    public static BlockPos fromRaycast(MovingObjectPosition mop) {
+        if (mop == null || mop.typeOfHit != MovingObjectType.BLOCK) return null;
+        return new BlockPos(mop.blockX, mop.blockY, mop.blockZ);
+    }
+
+    public static BlockPos fromRaycastSide(MovingObjectPosition mop) {
+        if (mop == null || mop.typeOfHit != MovingObjectType.BLOCK) return null;
+        ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
+        return new BlockPos(mop.blockX + dir.offsetX, mop.blockY + dir.offsetY, mop.blockZ + dir.offsetZ);
     }
 
     public static BlockPos containing(Vec3 vec) {
