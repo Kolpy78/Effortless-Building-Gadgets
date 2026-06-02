@@ -15,7 +15,12 @@ public abstract class BaseBuildMode {
     public abstract void add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop);
     public abstract void clear(ItemStack stack);
 
+    public int reach(ItemStack stack) {
+        return 32;
+    }
+
     public static void buildBox(World world, BlockMeta selected, BlockPos from, BlockPos to) {
+        if (from == null || to == null) return;
         for (int x = Math.min(from.x, to.x); x <= Math.max(from.x, to.x); x++)
         for (int y = Math.min(from.y, to.y); y <= Math.max(from.y, to.y); y++)
         for (int z = Math.min(from.z, to.z); z <= Math.max(from.z, to.z); z++) {

@@ -25,7 +25,7 @@ public class Extended extends BaseBuildMode {
 
     @Override
     public void render(ItemStack stack, World world, EntityPlayer player, float partialTicks) {
-        BlockPos pos = BlockPos.fromRaycastSide(BuildModes.getMop(player, 32));
+        BlockPos pos = BlockPos.fromRaycastSide(BuildModes.getMop(player, reach(stack)));
         if (pos == null) return;
         renderBox(player, partialTicks, pos, pos);
     }

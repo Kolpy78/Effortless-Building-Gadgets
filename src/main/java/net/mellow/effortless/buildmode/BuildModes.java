@@ -3,6 +3,7 @@ package net.mellow.effortless.buildmode;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
+import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 
 public class BuildModes {
 
@@ -11,7 +12,7 @@ public class BuildModes {
         Vec3 start = getPlayerPos(player);
         Vec3 end = start.addVector(look.xCoord * reach, look.yCoord * reach, look.zCoord * reach);
 
-        return player.worldObj.rayTraceBlocks(start, end);
+        return player.worldObj.func_147447_a(start, end, false, false, true);
     }
 
     //Find coordinates on a line bound by a plane
@@ -70,13 +71,12 @@ public class BuildModes {
 
     public static boolean isCriteriaValid(Vec3 start, Vec3 look, int reach, EntityPlayer player, boolean skipRaytrace, Vec3 lineBound, Vec3 planeBound, double distToPlayerSq) {
         boolean intersects = false;
-        // if (!skipRaytrace) {
-        //     //collision within a 1 block radius to selected is fine
-        //     ClipContext rayTraceContext = new ClipContext(start, lineBound, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player);
-        //     HitResult rayTraceResult = player.level().clip(rayTraceContext);
-        //     intersects = rayTraceResult != null && rayTraceResult.getType() == HitResult.Type.BLOCK &&
-        //         planeBound.subtract(rayTraceResult.getLocation()).lengthSqr() > 4;
-        // }
+        if (!skipRaytrace) {
+            //collision within a 1 block radius to selected is fine
+            MovingObjectPosition rayTraceResult = player.worldObj.rayTraceBlocks(start, lineBound);
+            intersects = rayTraceResult != null && rayTraceResult.typeOfHit == MovingObjectType.BLOCK &&
+                planeBound.squareDistanceTo(rayTraceResult.hitVec) > 4;
+        }
 
         return start.subtract(planeBound).dotProduct(look) > 0 &&
             distToPlayerSq > 2 && distToPlayerSq < reach * reach &&

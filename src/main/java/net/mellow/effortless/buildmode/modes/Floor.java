@@ -42,7 +42,7 @@ public class Floor extends BaseBuildMode {
     public void render(ItemStack stack, World world, EntityPlayer player, float partialTicks) {
         BlockPos from = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
         if (from == null) {
-            BlockPos pos = BlockPos.fromRaycastSide(BuildModes.getMop(player, 32));
+            BlockPos pos = BlockPos.fromRaycastSide(BuildModes.getMop(player, reach(stack)));
             if (pos != null) {
                 renderBox(player, partialTicks, pos, pos);
             }

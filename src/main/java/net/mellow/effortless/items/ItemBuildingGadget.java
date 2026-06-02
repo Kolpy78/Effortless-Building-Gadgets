@@ -24,6 +24,7 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     public static enum BuildingMode {
         EXTENDED(new Extended()), // greater reach
+        AIR(new Air()), // air placement
         LINE(new Line()), // lines
         WALL(new Wall()), // walls
         FLOOR(new Floor()); // floors
@@ -56,8 +57,9 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+        BuildingMode mode = getMode(stack);
 
-        MovingObjectPosition mop = BuildModes.getMop(player, 32);
+        MovingObjectPosition mop = BuildModes.getMop(player, mode.handler.reach(stack));
 
         if (player.isSneaking()) {
             if (!world.isRemote) {
@@ -75,20 +77,18 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
                 } else {
                     // temporary shitty hack to skip implementing a GUI just yet
 
-                    BuildingMode oldMode = getMode(stack);
-                    int mode = oldMode.ordinal();
-                    mode += 1;
-                    if (mode >= BuildingMode.values().length) mode = 0;
-                    BuildingMode newMode = BuildingMode.values()[mode];
+                    int modeInt = mode.ordinal();
+                    modeInt += 1;
+                    if (modeInt >= BuildingMode.values().length) modeInt = 0;
+                    BuildingMode newMode = BuildingMode.values()[modeInt];
 
-                    oldMode.handler.clear(stack);
+                    mode.handler.clear(stack);
                     setMode(stack, newMode);
 
                     player.addChatMessage(new ChatComponentText("set mode to: " + newMode));
                 }
             }
         } else {
-            BuildingMode mode = getMode(stack);
             mode.handler.add(stack, getSelected(stack), world, player, mop);
         }
 
