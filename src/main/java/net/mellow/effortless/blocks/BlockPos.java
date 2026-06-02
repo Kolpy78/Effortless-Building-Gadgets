@@ -1,5 +1,6 @@
 package net.mellow.effortless.blocks;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 
@@ -13,6 +14,21 @@ public class BlockPos implements Comparable<BlockPos> {
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+
+    public static BlockPos load(NBTTagCompound tag) {
+        int x = tag.getInteger("x");
+        int y = tag.getInteger("y");
+        int z = tag.getInteger("z");
+        return new BlockPos(x, y, z);
+    }
+
+    public NBTTagCompound save() {
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setInteger("x", x);
+        tag.setInteger("y", y);
+        tag.setInteger("z", z);
+        return tag;
     }
 
     public static BlockPos containing(Vec3 vec) {

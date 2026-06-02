@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.Vec3;
 
-public class Line {
+public class Line extends BaseBuildMode {
 
     public static BlockPos findLine(EntityPlayer player, BlockPos firstPos, boolean skipRaytrace) {
         Vec3 look = BuildModes.getPlayerLookVec(player);

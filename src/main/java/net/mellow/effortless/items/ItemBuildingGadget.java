@@ -8,10 +8,12 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
-import net.mellow.effortless.buildmode.modes.Line;
+import net.mellow.effortless.buildmode.modes.*;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -26,10 +28,16 @@ import net.minecraftforge.common.util.ForgeDirection;
 public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     public static enum BuildingMode {
-        EXTENDED, // greater reach
-        LINE, // lines
-        WALL, // walls
-        FLOOR, // floors
+        EXTENDED(new Extended()), // greater reach
+        LINE(new Line()), // lines
+        WALL(new Wall()), // walls
+        FLOOR(new Floor()); // floors
+
+        public BaseBuildMode handler;
+
+        private BuildingMode(BaseBuildMode handler) {
+            this.handler = handler;
+        }
     }
 
     @Override
@@ -63,14 +71,23 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
         if (player.isSneaking()) {
             if (!world.isRemote) {
-                if (mop == null || mop.typeOfHit != MovingObjectType.BLOCK) return stack;
+                if (mop != null && mop.typeOfHit == MovingObjectType.BLOCK) {
+                    // select the hovered block, maybe also temporary, we'll see
 
-                int x = mop.blockX;
-                int y = mop.blockY;
-                int z = mop.blockZ;
+                    int x = mop.blockX;
+                    int y = mop.blockY;
+                    int z = mop.blockZ;
+    
+                    BlockMeta target = new BlockMeta(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
+                    setSelected(stack, target);
+                } else {
+                    // temporary shitty hack to skip implementing a GUI just yet
 
-                BlockMeta target = new BlockMeta(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
-                setSelected(stack, target);
+                    int mode = getMode(stack).ordinal();
+                    mode += 1;
+                    if (mode >= BuildingMode.values().length) mode = 0;
+                    setMode(stack, BuildingMode.values()[mode]);
+                }
             }
         } else {
             BlockPos from = getFromPosition(stack);
@@ -106,6 +123,13 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
         }
     }
 
+    @Override
+    public boolean onEntitySwing(EntityLivingBase entityLiving, ItemStack stack) {
+        clearFromPosition(stack);
+        return false;
+    }
+
+
     public static BlockMeta getSelected(ItemStack stack) {
         if (stack.stackTagCompound == null) return new BlockMeta(Blocks.stone, 0);
         return new BlockMeta(stack.stackTagCompound.getInteger("block"), stack.stackTagCompound.getByte("meta"));
@@ -117,35 +141,35 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
         stack.stackTagCompound.setByte("meta", (byte)select.meta);
     }
 
+
+    // mode is stored as a string so inserting won't get funky with existing tools
     public static BuildingMode getMode(ItemStack stack) {
-        if (stack.stackTagCompound == null) return BuildingMode.LINE;
-        return BuildingMode.LINE;
+        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("mode")) return BuildingMode.EXTENDED;
+        return BuildingMode.valueOf(stack.stackTagCompound.getString("mode"));
     }
 
+    public static void setMode(ItemStack stack, BuildingMode mode) {
+        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+        stack.stackTagCompound.setString("mode", mode.name());
+    }
+
+
     public static BlockPos getFromPosition(ItemStack stack) {
-        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("x") || !stack.stackTagCompound.hasKey("y") || !stack.stackTagCompound.hasKey("z"))
+        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("pos0"))
             return null;
 
-        int x = stack.stackTagCompound.getInteger("x");
-        int y = stack.stackTagCompound.getInteger("y");
-        int z = stack.stackTagCompound.getInteger("z");
-
-        return new BlockPos(x, y, z);
+        return BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
     }
 
     public static void setFromPosition(ItemStack stack, BlockPos pos) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
-
-        stack.stackTagCompound.setInteger("x", pos.x);
-        stack.stackTagCompound.setInteger("y", pos.y);
-        stack.stackTagCompound.setInteger("z", pos.z);
+        stack.stackTagCompound.setTag("pos0", pos.save());
     }
 
     public static void clearFromPosition(ItemStack stack) {
-        stack.stackTagCompound.removeTag("x");
-        stack.stackTagCompound.removeTag("y");
-        stack.stackTagCompound.removeTag("z");
+        stack.stackTagCompound.removeTag("pos0");
     }
+
 
     @Override
     public void render(World world, EntityPlayer player, ItemStack stack, float partialTicks) {
