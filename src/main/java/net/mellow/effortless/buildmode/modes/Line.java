@@ -55,7 +55,7 @@ public class Line extends BaseBuildMode {
 
     public static BlockPos findLine(EntityPlayer player, BlockPos firstPos, boolean skipRaytrace) {
         Vec3 look = BuildModes.getPlayerLookVec(player);
-        Vec3 start = Vec3.createVectorHelper(player.posX, player.posY + player.getEyeHeight(), player.posZ);
+        Vec3 start = BuildModes.getPlayerPos(player);
 
         List<Criteria> criteriaList = new ArrayList<>(3);
 

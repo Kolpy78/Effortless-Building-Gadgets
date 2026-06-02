@@ -15,6 +15,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
@@ -23,9 +24,9 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     public static enum BuildingMode {
         EXTENDED(new Extended()), // greater reach
-        LINE(new Line()); // lines
-        // WALL(new Wall()), // walls
-        // FLOOR(new Floor()); // floors
+        LINE(new Line()), // lines
+        WALL(new Wall()), // walls
+        FLOOR(new Floor()); // floors
 
         public BaseBuildMode handler;
 
@@ -69,15 +70,21 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
     
                     BlockMeta target = new BlockMeta(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
                     setSelected(stack, target);
+
+                    player.addChatMessage(new ChatComponentText("set block to: " + target.block.getUnlocalizedName()));
                 } else {
                     // temporary shitty hack to skip implementing a GUI just yet
 
-                    int mode = getMode(stack).ordinal();
+                    BuildingMode oldMode = getMode(stack);
+                    int mode = oldMode.ordinal();
                     mode += 1;
                     if (mode >= BuildingMode.values().length) mode = 0;
+                    BuildingMode newMode = BuildingMode.values()[mode];
 
-                    getMode(stack).handler.clear(stack);
-                    setMode(stack, BuildingMode.values()[mode]);
+                    oldMode.handler.clear(stack);
+                    setMode(stack, newMode);
+
+                    player.addChatMessage(new ChatComponentText("set mode to: " + newMode));
                 }
             }
         } else {
@@ -109,7 +116,7 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     // mode is stored as a string so inserting new modes won't fuck up existing tools
     public static BuildingMode getMode(ItemStack stack) {
-        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("mode")) return BuildingMode.LINE;
+        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("mode")) return BuildingMode.EXTENDED;
         try {
             return BuildingMode.valueOf(stack.stackTagCompound.getString("mode"));
         } catch (IllegalArgumentException ex) {
@@ -125,6 +132,7 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview {
 
     @Override
     public void render(World world, EntityPlayer player, ItemStack stack, float partialTicks) {
+        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
         getMode(stack).handler.render(stack, world, player, partialTicks);
     }
 

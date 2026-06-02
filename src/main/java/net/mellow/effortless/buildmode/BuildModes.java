@@ -7,8 +7,8 @@ import net.minecraft.util.Vec3;
 public class BuildModes {
 
     public static MovingObjectPosition getMop(EntityPlayer player, int reach) {
-        Vec3 look = BuildModes.getPlayerLookVec(player);
-        Vec3 start = Vec3.createVectorHelper(player.posX, player.posY + player.getEyeHeight(), player.posZ);
+        Vec3 look = getPlayerLookVec(player);
+        Vec3 start = getPlayerPos(player);
         Vec3 end = start.addVector(look.xCoord * reach, look.yCoord * reach, look.zCoord * reach);
 
         return player.worldObj.rayTraceBlocks(start, end);
@@ -62,6 +62,10 @@ public class BuildModes {
         if (Math.abs(z + 1.0) < 0.0001) z = -0.9999;
 
         return Vec3.createVectorHelper(x, y, z);
+    }
+
+    public static Vec3 getPlayerPos(EntityPlayer player) {
+        return Vec3.createVectorHelper(player.posX, player.posY + player.getEyeHeight(), player.posZ);
     }
 
     public static boolean isCriteriaValid(Vec3 start, Vec3 look, int reach, EntityPlayer player, boolean skipRaytrace, Vec3 lineBound, Vec3 planeBound, double distToPlayerSq) {
