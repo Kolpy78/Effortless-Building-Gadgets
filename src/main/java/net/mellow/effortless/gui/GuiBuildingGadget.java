@@ -268,6 +268,17 @@ public class GuiBuildingGadget extends GuiScreen {
 
 
         // Draw helpful tooltip description, if available
+        if (switchToMode != null) {
+            String unloc = switchToMode.getUnlocalizedDesc();
+            String text = I18n.format(unloc);
+
+            if (!text.equals(unloc)) {
+                int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
+                int ty = (int) midY - 100;
+
+                drawString(fontRendererObj, text, tx, ty, 0xDD888888);
+            }
+        }
     }
 
     @Override

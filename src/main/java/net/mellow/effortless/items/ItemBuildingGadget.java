@@ -29,7 +29,8 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
         AIR(new Air(), 240, 16), // air placement
         LINE(new Line(), 32, 16), // lines
         WALL(new Wall(), 48, 16), // walls
-        FLOOR(new Floor(), 64, 16); // floors
+        FLOOR(new Floor(), 64, 16), // floors
+        CUBE(new Cube(), 80, 16); // miney crafta
 
         public final BaseBuildMode handler;
         public final int iconX;
@@ -128,6 +129,8 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
 
     @Override
     public void receiveControl(ItemStack stack, NBTTagCompound nbt) {
+        getMode(stack).handler.clear(stack);
+
         if (nbt.hasKey("mode")) stack.stackTagCompound.setString("mode", nbt.getString("mode"));
         if (nbt.hasKey("block")) stack.stackTagCompound.setInteger("block", nbt.getInteger("block"));
         if (nbt.hasKey("meta")) stack.stackTagCompound.setByte("meta", nbt.getByte("meta"));

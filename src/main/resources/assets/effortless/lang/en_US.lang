@@ -5,3 +5,4 @@ buildingmode.air.desc=Place blocks in the air
 buildingmode.line.name=Line
 buildingmode.wall.name=Wall
 buildingmode.floor.name=Floor
+buildingmode.cube.name=Cube
