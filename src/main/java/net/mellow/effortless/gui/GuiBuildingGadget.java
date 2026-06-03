@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 
 import net.mellow.effortless.Keybinds;
 import net.mellow.effortless.blocks.BlockMeta;
@@ -17,7 +18,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemBlock;
@@ -26,10 +29,17 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
 public class GuiBuildingGadget extends GuiScreen {
+    
+    private static RenderItem renderItem = new RenderItem();
 
     private ItemStack gadget;
+
+    private BuildingMode currentMode;
+    private BlockMeta currentBlock;
+
     private List<BlockMeta> usableBlocks = new ArrayList<>();
 
+    // For mouse click interactions
     private BuildingMode switchToMode = null;
     private BlockMeta switchToBlock = null;
 
@@ -39,6 +49,9 @@ public class GuiBuildingGadget extends GuiScreen {
 
     @Override
     public void initGui() {
+        currentMode = ItemBuildingGadget.getMode(gadget);
+        currentBlock = ItemBuildingGadget.getSelected(gadget);
+
         EntityPlayer player = this.mc.thePlayer;
         for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++) {
             ItemStack stack = player.inventory.getStackInSlot(i);
@@ -46,7 +59,11 @@ public class GuiBuildingGadget extends GuiScreen {
             if (stack == null) continue;
             if (!(stack.getItem() instanceof ItemBlock)) continue;
 
-            usableBlocks.add(new BlockMeta(((ItemBlock) stack.getItem()).field_150939_a, stack.getItem().getMetadata(stack.getItemDamage())));
+            BlockMeta block = new BlockMeta(((ItemBlock) stack.getItem()).field_150939_a, stack.getItem().getMetadata(stack.getItemDamage()));
+
+            if (usableBlocks.contains(block)) continue;
+
+            usableBlocks.add(block);
         }
     }
 
@@ -106,6 +123,8 @@ public class GuiBuildingGadget extends GuiScreen {
         tessellator.startDrawingQuads();
 
         for (int i = 0; i < modeCount; i++) {
+            BuildingMode mode = BuildingMode.values()[i];
+
             double begin = i * radiansPer - qtrCircle;
             double end = (i + 1) * radiansPer - qtrCircle;
 
@@ -119,15 +138,16 @@ public class GuiBuildingGadget extends GuiScreen {
             double y1m2 = Math.sin(begin + gapOuter) * ringOuter;
             double y2m2 = Math.sin(end - gapOuter) * ringOuter;
 
+            boolean isSelected = mode == currentMode;
             boolean isMouseInQuad = inTriangle(x1m1, y1m1, x2m2, y2m2, x2m1, y2m1, mx, my)
                 || inTriangle(x1m1, y1m1, x1m2, y1m2, x2m2, y2m2, mx, my);
             boolean isHighlighted = begin <= mr && mr <= end && isMouseInQuad;
 
             if (isHighlighted) {
-                switchToMode = BuildingMode.values()[i];
+                switchToMode = mode;
             }
 
-            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : 120);
+            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 180 : 80);
 
             tessellator.addVertex(midX + x1m1, midY + y1m1, 0);
             tessellator.addVertex(midX + x2m1, midY + y2m1, 0);
@@ -138,24 +158,27 @@ public class GuiBuildingGadget extends GuiScreen {
 
 
         // Draw block selecting buttons
-        double btnWidth = 20;
+        double btnWidth = 24;
         double padding = 2;
         double btnXOffset = (blockCount * btnWidth + (blockCount - 1) * padding) / 2;
-        double btnYOffset = 80;
+        double btnYOffset = 70;
 
         for (int i = 0; i < blockCount; i++) {
+            BlockMeta block = usableBlocks.get(i);
+
             double x1 = midX + i * btnWidth + i * padding - btnXOffset;
             double x2 = x1 + btnWidth;
             double y1 = midY + btnYOffset;
             double y2 = y1 + btnWidth;
 
+            boolean isSelected = block.equals(currentBlock);
             boolean isHighlighted = x1 <= mouseX && x2 >= mouseX && y1 <= mouseY && y2 >= mouseY;
 
             if (isHighlighted) {
-                switchToBlock = usableBlocks.get(i);
+                switchToBlock = block;
             }
 
-            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : 120);
+            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 180 : 80);
             
             tessellator.addVertex(x1, y1, 0);
             tessellator.addVertex(x1, y2, 0);
@@ -167,6 +190,22 @@ public class GuiBuildingGadget extends GuiScreen {
 
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_BLEND);
+
+
+
+        // Draw block selecting icons
+        GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+        RenderHelper.enableGUIStandardItemLighting();
+
+        for (int i = 0; i < blockCount; i++) {
+            BlockMeta block = usableBlocks.get(i);
+            double x = midX + i * btnWidth + i * padding - btnXOffset;
+            double y = midY + btnYOffset;
+            renderItem.renderItemIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), new ItemStack(block.block, 1, block.meta), (int)x + 4, (int)y + 4);
+        }
+
+        RenderHelper.disableStandardItemLighting();
+        GL11.glDisable(GL12.GL_RESCALE_NORMAL);
     }
 
     @Override
@@ -178,6 +217,7 @@ public class GuiBuildingGadget extends GuiScreen {
             data.setString("mode", switchToMode.name());
 
             NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
+            currentMode = switchToMode;
 
             playClick();
         }
@@ -188,6 +228,7 @@ public class GuiBuildingGadget extends GuiScreen {
             data.setByte("meta", (byte)switchToBlock.meta);
 
             NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
+            currentBlock = switchToBlock;
 
             playClick();
         }
