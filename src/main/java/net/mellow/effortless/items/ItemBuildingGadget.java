@@ -140,7 +140,7 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
 
     @Override
     public void provideGui(ItemStack stack, EntityPlayer player) {
-        FMLCommonHandler.instance().showGuiScreen(new GuiBuildingGadget());
+        FMLCommonHandler.instance().showGuiScreen(new GuiBuildingGadget(stack));
     }
 
 }
