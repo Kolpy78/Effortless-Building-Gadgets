@@ -124,6 +124,17 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
     }
 
 
+    @Override
+    public boolean showDurabilityBar(ItemStack stack) {
+        return (hasRF || hasHE) && getEnergyStored(stack) < getMaxEnergyStored(stack);
+    }
+
+    @Override
+    public double getDurabilityForDisplay(ItemStack stack) {
+        return 1 - (double) getEnergyStored(stack) / (double) getMaxEnergyStored(stack);
+    }
+
+
     public static BlockMeta getSelected(ItemStack stack) {
         if (stack.stackTagCompound == null) return new BlockMeta(Blocks.stone, 0);
         return new BlockMeta(stack.stackTagCompound.getInteger("block"), stack.stackTagCompound.getByte("meta"));
