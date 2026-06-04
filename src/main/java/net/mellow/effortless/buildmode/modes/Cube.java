@@ -7,6 +7,7 @@ import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
@@ -51,11 +52,10 @@ public class Cube extends BaseBuildMode {
         BlockPos pos1 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos1"));
 
         if (pos0 == null) {
-            pos0 = BlockPos.fromRaycastSide(BuildModes.getMop(player, reach(stack)));
-            if (pos0 != null) {
-                renderBox(player, partialTicks, pos0, pos0);
+            MovingObjectPosition mop = BuildModes.getMop(player, reach(stack));
+            if (mop != null) {
+                Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
             }
-            return;
         } else if (pos1 == null) {
             pos1 = Floor.findFloor(player, pos0, true);
             if (pos1 != null) {

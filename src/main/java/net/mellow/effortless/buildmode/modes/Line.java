@@ -7,6 +7,7 @@ import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
@@ -39,17 +40,16 @@ public class Line extends BaseBuildMode {
     public void render(ItemStack stack, World world, EntityPlayer player, float partialTicks) {
         BlockPos from = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
         if (from == null) {
-            BlockPos pos = BlockPos.fromRaycastSide(BuildModes.getMop(player, 32));
-            if (pos != null) {
-                renderBox(player, partialTicks, pos, pos);
+            MovingObjectPosition mop = BuildModes.getMop(player, reach(stack));
+            if (mop != null) {
+                Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
             }
-            return;
+        } else {
+            BlockPos to = findLine(player, from, true);;
+            if (to == null) return;
+    
+            renderBox(player, partialTicks, from, to);
         }
-
-        BlockPos to = findLine(player, from, true);;
-        if (to == null) return;
-
-        renderBox(player, partialTicks, from, to);
     }
 
 

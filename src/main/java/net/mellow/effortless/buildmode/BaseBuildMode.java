@@ -26,8 +26,23 @@ public abstract class BaseBuildMode {
     }
 
     public static void buildBox(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
-        if (from == null || to == null) return;
         if (world.isRemote) return;
+        if (from == null || to == null) return;
+
+        List<BlockPos> positions = new ArrayList<>();
+
+        for (int x = Math.min(from.x, to.x); x <= Math.max(from.x, to.x); x++)
+        for (int y = Math.min(from.y, to.y); y <= Math.max(from.y, to.y); y++)
+        for (int z = Math.min(from.z, to.z); z <= Math.max(from.z, to.z); z++) {
+            positions.add(new BlockPos(x, y, z));
+        }
+        
+        build(world, player, selected, positions, replaceAny);
+    }
+
+    public static void build(World world, EntityPlayer player, BlockMeta selected, List<BlockPos> positions, boolean replaceAny) {
+        if (world.isRemote) return;
+        if (positions == null || positions.isEmpty()) return;
 
         boolean useItems = !player.capabilities.isCreativeMode;
 
@@ -38,14 +53,11 @@ public abstract class BaseBuildMode {
             if (toDeplete == null) return;
         }
 
-        outer:
-        for (int x = Math.min(from.x, to.x); x <= Math.max(from.x, to.x); x++)
-        for (int y = Math.min(from.y, to.y); y <= Math.max(from.y, to.y); y++)
-        for (int z = Math.min(from.z, to.z); z <= Math.max(from.z, to.z); z++) {
-            Block block = world.getBlock(x, y, z);
-            if (!replaceAny && !block.isReplaceable(world, x, y, z)) continue;
+        for (BlockPos pos : positions) {
+            Block block = world.getBlock(pos.x, pos.y, pos.z);
+            if (!replaceAny && !block.isReplaceable(world, pos.x, pos.y, pos.z)) continue;
 
-            int meta = world.getBlockMetadata(x, y, z);
+            int meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
             if (block.hasTileEntity(meta)) continue;
 
             if (useItems) {
@@ -53,15 +65,15 @@ public abstract class BaseBuildMode {
                     toDeplete = getMatchingStack(player, selected);
 
                     if (toDeplete == null) {
-                        break outer;
+                        break;
                     }
                 }
 
                 toDeplete.stackSize--;
             }
 
-            previousState.add(new HistoryBlock(new BlockMeta(block, meta), selected, new BlockPos(x, y, z)));
-            world.setBlock(x, y, z, selected.block, selected.meta, 3);
+            previousState.add(new HistoryBlock(new BlockMeta(block, meta), selected, new BlockPos(pos.x, pos.y, pos.z)));
+            world.setBlock(pos.x, pos.y, pos.z, selected.block, selected.meta, 3);
         }
 
         History.addUndo(player, previousState);

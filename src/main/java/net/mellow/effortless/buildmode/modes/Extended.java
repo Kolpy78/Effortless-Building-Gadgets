@@ -4,6 +4,7 @@ import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
@@ -25,9 +26,10 @@ public class Extended extends BaseBuildMode {
 
     @Override
     public void render(ItemStack stack, World world, EntityPlayer player, float partialTicks) {
-        BlockPos pos = BlockPos.fromRaycastSide(BuildModes.getMop(player, reach(stack)));
-        if (pos == null) return;
-        renderBox(player, partialTicks, pos, pos);
+        MovingObjectPosition mop = BuildModes.getMop(player, reach(stack));
+        if (mop != null) {
+            Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
+        }
     }
     
 }
