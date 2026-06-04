@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
@@ -59,6 +60,10 @@ public abstract class BaseBuildMode {
 
             int meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
             if (block.hasTileEntity(meta)) continue;
+
+            AxisAlignedBB bb = AxisAlignedBB.getBoundingBox(pos.x, pos.y, pos.z, pos.x + 1, pos.y + 1, pos.z + 1);
+
+            if (!world.checkNoEntityCollision(bb, player)) continue;
 
             if (useItems) {
                 if (toDeplete == null || toDeplete.stackSize <= 0) {
