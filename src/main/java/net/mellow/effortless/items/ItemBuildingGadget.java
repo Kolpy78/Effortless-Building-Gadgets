@@ -65,12 +65,25 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
         }
     }
 
+    private static boolean hasRF;
+    private static boolean hasHE;
+
+    static {
+        try {
+            Class.forName("cofh.api.energy.IEnergyContainerItem");
+            hasRF = true;
+        } catch (Exception ex) {
+            hasRF = false;
+        }
+        hasHE = Loader.isModLoaded("hbm");
+    }
+
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> list, boolean bool) {
         EnumChatFormatting chargeFormat = getEnergyStored(stack) >= capacity / 10 ? EnumChatFormatting.BLUE : EnumChatFormatting.RED;
-        if (Loader.isModLoaded("CoFHAPI")) list.add(chargeFormat + I18n.format("energy.stored.rf", MathUtil.getShortNumber(getEnergyStored(stack)), MathUtil.getShortNumber(getMaxEnergyStored(stack))));
-        if (Loader.isModLoaded("hbm")) list.add(chargeFormat + I18n.format("energy.stored.he", MathUtil.getShortNumber(getCharge(stack)), MathUtil.getShortNumber(getMaxCharge(stack))));
+        if (hasRF) list.add(chargeFormat + I18n.format("energy.stored.rf", MathUtil.getShortNumber(getEnergyStored(stack)), MathUtil.getShortNumber(getMaxEnergyStored(stack))));
+        if (hasHE) list.add(chargeFormat + I18n.format("energy.stored.he", MathUtil.getShortNumber(getCharge(stack)), MathUtil.getShortNumber(getMaxCharge(stack))));
         list.add(EnumChatFormatting.YELLOW + I18n.format("hint.uikey.usage", Keyboard.getKeyName(Keybinds.uiKey.getKeyCode())));
     }
 
@@ -87,7 +100,7 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
 
         MovingObjectPosition mop = BuildModes.getMop(player, mode.handler.reach(stack));
 
-        boolean requiresPower = !player.capabilities.isCreativeMode && (Loader.isModLoaded("CoFHAPI") || Loader.isModLoaded("hbm"));
+        boolean requiresPower = !player.capabilities.isCreativeMode && (hasRF || hasHE);
         int energy = stack.stackTagCompound.getInteger("energy");
 
         if (requiresPower) {
