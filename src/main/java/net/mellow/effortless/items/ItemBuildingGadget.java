@@ -3,9 +3,12 @@ package net.mellow.effortless.items;
 import java.util.List;
 import java.util.Locale;
 
+import org.lwjgl.input.Keyboard;
+
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.mellow.effortless.Keybinds;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
@@ -13,12 +16,14 @@ import net.mellow.effortless.buildmode.History;
 import net.mellow.effortless.buildmode.modes.*;
 import net.mellow.effortless.gui.GuiBuildingGadget;
 import net.mellow.effortless.network.IItemControlReceiver;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
@@ -54,13 +59,7 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> list, boolean bool) {
-        BlockMeta selected = getSelected(stack);
-        BuildingMode mode = getMode(stack);
-
-        list.add("mode:  " + mode);
-
-        list.add("block: " + selected.block.getUnlocalizedName());
-        list.add("meta:  " + selected.meta);
+        list.add(EnumChatFormatting.YELLOW + I18n.format("hint.uikey.usage", Keyboard.getKeyName(Keybinds.uiKey.getKeyCode())));
     }
 
     // IF WE PUT ROCKS IN THE SHAPE OF A RUNWAY GOD WILL GIVE US HIGH-FRUCTOSE CORN SYRUP

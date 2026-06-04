@@ -10,4 +10,8 @@ buildingmode.wall.name=Wall
 buildingmode.floor.name=Floor
 buildingmode.cube.name=Cube
 
+buildingui.noblocks=No blocks in hotbar
+
+hint.uikey.usage=[ Hold %s to configure ]
+
 item.building_gadget.name=Building Gadget

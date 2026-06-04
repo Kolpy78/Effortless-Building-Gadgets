@@ -321,6 +321,15 @@ public class GuiBuildingGadget extends GuiScreen {
         RenderHelper.disableStandardItemLighting();
         GL11.glDisable(GL12.GL_RESCALE_NORMAL);
 
+        if (blockCount == 0) {
+            String text = I18n.format("buildingui.noblocks");
+            int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
+            int ty = (int) (midY + blockYOffset + btnWidth + 8);
+
+            drawString(fontRendererObj, text, tx, ty, 0xFFAA0000);
+            GL11.glColor4d(1, 1, 1, 1);
+        }
+
 
 
         // Draw action button icons
