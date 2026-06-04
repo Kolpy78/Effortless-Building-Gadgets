@@ -33,7 +33,7 @@ public class Cube extends BaseBuildMode {
         } else {
             BlockPos pos2 = findHeight(player, pos1, true);
 
-            buildBox(world, selected, pos0, pos2);
+            buildBox(world, player, selected, pos0, pos2, false);
 
             clear(stack);
         }
@@ -50,7 +50,6 @@ public class Cube extends BaseBuildMode {
         BlockPos pos0 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
         BlockPos pos1 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos1"));
 
-        
         if (pos0 == null) {
             pos0 = BlockPos.fromRaycastSide(BuildModes.getMop(player, reach(stack)));
             if (pos0 != null) {

@@ -27,7 +27,7 @@ public class Floor extends BaseBuildMode {
         } else {
             BlockPos to = findFloor(player, from, true);
 
-            buildBox(world, selected, from, to);
+            buildBox(world, player, selected, from, to, false);
 
             clear(stack);
         }

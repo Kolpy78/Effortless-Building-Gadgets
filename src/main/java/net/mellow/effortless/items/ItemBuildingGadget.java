@@ -9,10 +9,10 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.mellow.effortless.buildmode.History;
 import net.mellow.effortless.buildmode.modes.*;
 import net.mellow.effortless.gui.GuiBuildingGadget;
 import net.mellow.effortless.network.IItemControlReceiver;
-import net.minecraft.block.Block;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -93,12 +93,6 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
         return new BlockMeta(stack.stackTagCompound.getInteger("block"), stack.stackTagCompound.getByte("meta"));
     }
 
-    public static void setSelected(ItemStack stack, BlockMeta select) {
-        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
-        stack.stackTagCompound.setInteger("block", Block.getIdFromBlock(select.block));
-        stack.stackTagCompound.setByte("meta", (byte)select.meta);
-    }
-
 
     // mode is stored as a string so inserting new modes won't fuck up existing tools
     public static BuildingMode getMode(ItemStack stack) {
@@ -108,11 +102,6 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
         } catch (IllegalArgumentException ex) {
             return BuildingMode.LINE;
         }
-    }
-
-    public static void setMode(ItemStack stack, BuildingMode mode) {
-        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
-        stack.stackTagCompound.setString("mode", mode.name());
     }
 
 
@@ -128,12 +117,21 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
     }
 
     @Override
-    public void receiveControl(ItemStack stack, NBTTagCompound nbt) {
+    public void receiveControl(EntityPlayer player, ItemStack stack, NBTTagCompound nbt) {
         getMode(stack).handler.clear(stack);
 
         if (nbt.hasKey("mode")) stack.stackTagCompound.setString("mode", nbt.getString("mode"));
         if (nbt.hasKey("block")) stack.stackTagCompound.setInteger("block", nbt.getInteger("block"));
         if (nbt.hasKey("meta")) stack.stackTagCompound.setByte("meta", nbt.getByte("meta"));
+
+        if (nbt.hasKey("action")) {
+            String action = nbt.getString("action");
+
+            switch (action) {
+                case "undo": History.undo(player.worldObj, player); break;
+                case "redo": History.redo(player.worldObj, player); break;
+            }
+        }
     }
 
 }

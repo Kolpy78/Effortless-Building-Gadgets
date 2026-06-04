@@ -26,7 +26,7 @@ public class Line extends BaseBuildMode {
         } else {
             BlockPos to = findLine(player, from, true);
 
-            buildBox(world, selected, from, to);
+            buildBox(world, player, selected, from, to, false);
 
             clear(stack);
         }

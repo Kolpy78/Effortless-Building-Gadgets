@@ -1,9 +1,14 @@
 package net.mellow.effortless.buildmode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.lwjgl.opengl.GL11;
 
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.buildmode.History.HistoryBlock;
+import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -19,13 +24,26 @@ public abstract class BaseBuildMode {
         return 32;
     }
 
-    public static void buildBox(World world, BlockMeta selected, BlockPos from, BlockPos to) {
+    public static void buildBox(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
         if (from == null || to == null) return;
+        if (world.isRemote) return;
+
+        List<HistoryBlock> previousState = new ArrayList<>();
+
         for (int x = Math.min(from.x, to.x); x <= Math.max(from.x, to.x); x++)
         for (int y = Math.min(from.y, to.y); y <= Math.max(from.y, to.y); y++)
         for (int z = Math.min(from.z, to.z); z <= Math.max(from.z, to.z); z++) {
+            Block block = world.getBlock(x, y, z);
+            if (!replaceAny && !block.isReplaceable(world, x, y, z)) continue;
+
+            int meta = world.getBlockMetadata(x, y, z);
+            if (block.hasTileEntity(meta)) continue;
+
+            previousState.add(new HistoryBlock(new BlockMeta(block, meta), selected, new BlockPos(x, y, z)));
             world.setBlock(x, y, z, selected.block, selected.meta, 3);
         }
+
+        History.addUndo(player, previousState);
     }
 
     public abstract void render(ItemStack stack, World world, EntityPlayer player, float partialTicks);

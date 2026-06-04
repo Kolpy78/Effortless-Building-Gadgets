@@ -54,7 +54,7 @@ public class NBTControlPacket implements IMessage {
                 NBTTagCompound nbt = message.buffer.readNBTTagCompoundFromBuffer();
 
                 if (nbt != null) {
-                    ((IItemControlReceiver) held.getItem()).receiveControl(held, nbt);
+                    ((IItemControlReceiver) held.getItem()).receiveControl(player, held, nbt);
                 }
 
             } catch (IOException e) {

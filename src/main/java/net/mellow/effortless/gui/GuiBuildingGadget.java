@@ -2,6 +2,7 @@ package net.mellow.effortless.gui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
@@ -47,6 +48,32 @@ public class GuiBuildingGadget extends GuiScreen {
     // For mouse click interactions
     private BuildingMode switchToMode = null;
     private BlockMeta switchToBlock = null;
+    private BuildingAction performAction = null;
+
+    public static enum BuildingAction {
+        UNDO(16, 0),
+        REDO(32, 0);
+
+        public final int iconX;
+        public final int iconY;
+
+        private BuildingAction(int iconX, int iconY) {
+            this.iconX = iconX;
+            this.iconY = iconY;
+        }
+
+        public String getAction() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+        
+        public String getUnlocalizedName() {
+            return "buildingaction." + getAction() + ".name";
+        }
+
+        public String getUnlocalizedDesc() {
+            return "buildingaction." + getAction() + ".desc";
+        }
+    }
 
     public GuiBuildingGadget(ItemStack stack) {
         this.gadget = stack;
@@ -98,6 +125,7 @@ public class GuiBuildingGadget extends GuiScreen {
 
         int modeCount = ItemBuildingGadget.BuildingMode.values().length;
         int blockCount = usableBlocks.size();
+        int actionCount = BuildingAction.values().length;
 
         double midX = width / 2;
         double midY = height / 2;
@@ -107,6 +135,7 @@ public class GuiBuildingGadget extends GuiScreen {
         // reset mouseover selection
         switchToMode = null;
         switchToBlock = null;
+        performAction = null;
 
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -153,7 +182,7 @@ public class GuiBuildingGadget extends GuiScreen {
                 switchToMode = mode;
             }
 
-            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 180 : 80);
+            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 170 : 80);
 
             tessellator.addVertex(midX + x1m1, midY + y1m1, 0);
             tessellator.addVertex(midX + x2m1, midY + y2m1, 0);
@@ -166,15 +195,15 @@ public class GuiBuildingGadget extends GuiScreen {
         // Draw block selecting buttons
         double btnWidth = 24;
         double padding = 2;
-        double btnXOffset = (blockCount * btnWidth + (blockCount - 1) * padding) / 2;
-        double btnYOffset = 70;
+        double blockXOffset = -(blockCount * btnWidth + (blockCount - 1) * padding) / 2;
+        double blockYOffset = 70;
 
         for (int i = 0; i < blockCount; i++) {
             BlockMeta block = usableBlocks.get(i);
 
-            double x1 = midX + i * btnWidth + i * padding - btnXOffset;
+            double x1 = midX + i * btnWidth + i * padding + blockXOffset;
             double x2 = x1 + btnWidth;
-            double y1 = midY + btnYOffset;
+            double y1 = midY + blockYOffset;
             double y2 = y1 + btnWidth;
 
             boolean isSelected = block.equals(currentBlock);
@@ -184,7 +213,35 @@ public class GuiBuildingGadget extends GuiScreen {
                 switchToBlock = block;
             }
 
-            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 180 : 80);
+            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 170 : 80);
+            
+            tessellator.addVertex(x1, y1, 0);
+            tessellator.addVertex(x1, y2, 0);
+            tessellator.addVertex(x2, y2, 0);
+            tessellator.addVertex(x2, y1, 0);
+        }
+
+
+
+        // Draw action buttons
+        double actionXOffset = -(actionCount * btnWidth + (actionCount - 1) * padding) / 2 - 120;
+        double actionYOffset = 0;
+
+        for (int i = 0; i < actionCount; i++) {
+            BuildingAction action = BuildingAction.values()[i];
+
+            double x1 = midX + i * btnWidth + i * padding + actionXOffset;
+            double x2 = x1 + btnWidth;
+            double y1 = midY + actionYOffset;
+            double y2 = y1 + btnWidth;
+
+            boolean isHighlighted = x1 <= mouseX && x2 >= mouseX && y1 <= mouseY && y2 >= mouseY;
+
+            if (isHighlighted) {
+                performAction = action;
+            }
+
+            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : 80);
             
             tessellator.addVertex(x1, y1, 0);
             tessellator.addVertex(x1, y2, 0);
@@ -241,22 +298,20 @@ public class GuiBuildingGadget extends GuiScreen {
 
 
         // Draw block selecting icons
-
-        
         GL11.glEnable(GL12.GL_RESCALE_NORMAL);
         RenderHelper.enableGUIStandardItemLighting();
 
         for (int i = 0; i < blockCount; i++) {
             BlockMeta block = usableBlocks.get(i);
-            double x = midX + i * btnWidth + i * padding - btnXOffset;
-            double y = midY + btnYOffset;
+            double x = midX + i * btnWidth + i * padding + blockXOffset;
+            double y = midY + blockYOffset;
             renderItem.renderItemIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), new ItemStack(block.block, 1, block.meta), (int)x + 4, (int)y + 4);
 
             if (block.equals(switchToBlock)) {
                 ItemStack stack = usableBlockStacks.get(i);
                 String text = I18n.format(stack.getItem().getUnlocalizedName(stack) + ".name");
                 int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
-                int ty = (int) (midY + btnYOffset + btnWidth + 8);
+                int ty = (int) (midY + blockYOffset + btnWidth + 8);
     
                 drawString(fontRendererObj, text, tx, ty, 0xFFFFFFFF);
             }
@@ -264,6 +319,26 @@ public class GuiBuildingGadget extends GuiScreen {
 
         RenderHelper.disableStandardItemLighting();
         GL11.glDisable(GL12.GL_RESCALE_NORMAL);
+
+
+
+        // Draw action button icons
+        for (int i = 0; i < actionCount; i++) {
+            BuildingAction action = BuildingAction.values()[i];
+            double x = midX + i * btnWidth + i * padding + actionXOffset;
+            double y = midY + actionYOffset;
+
+            mc.getTextureManager().bindTexture(buildIcons);
+            drawTexturedModalRect((int)(x + 4), (int)(y + 4), action.iconX, action.iconY, 16, 16);
+
+            if (action == performAction) {
+                String text = I18n.format(action.getUnlocalizedName());
+                int tx = (int) (midX - 120 - fontRendererObj.getStringWidth(text) / 2);
+                int ty = (int) (midY + actionYOffset + btnWidth + 8);
+    
+                drawString(fontRendererObj, text, tx, ty, 0xFFFFFFFF);
+            }
+        }
 
 
 
@@ -302,6 +377,15 @@ public class GuiBuildingGadget extends GuiScreen {
 
             NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
             currentBlock = switchToBlock;
+
+            playClick();
+        }
+
+        if (performAction != null) {
+            NBTTagCompound data = new NBTTagCompound();
+            data.setString("action", performAction.getAction());
+
+            NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
 
             playClick();
         }

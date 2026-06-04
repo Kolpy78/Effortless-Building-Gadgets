@@ -1,3 +1,6 @@
+buildingaction.undo.name=Undo
+buildingaction.redo.name=Redo
+
 buildingmode.extended.name=Extended
 buildingmode.extended.desc=Regular block placing with extended reach
 buildingmode.air.name=Air

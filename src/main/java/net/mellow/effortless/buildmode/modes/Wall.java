@@ -27,7 +27,7 @@ public class Wall extends BaseBuildMode {
         } else {
             BlockPos to = findWall(player, from, true);
 
-            buildBox(world, selected, from, to);
+            buildBox(world, player, selected, from, to, false);
 
             clear(stack);
         }
