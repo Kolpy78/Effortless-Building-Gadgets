@@ -17,21 +17,23 @@ import net.minecraft.world.World;
 public class Floor extends BaseBuildMode {
 
     @Override
-    public void add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
         BlockPos from = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
 
         if (from == null) {
             from = BlockPos.fromRaycastSide(mop);
-            if (from == null) return;
+            if (from == null) return 0;
 
             stack.stackTagCompound.setTag("pos0", from.save());
         } else {
             BlockPos to = findFloor(player, from, true);
 
-            buildBox(world, player, selected, from, to, false);
-
             clear(stack);
+            
+            return buildBox(world, player, selected, from, to, false);
         }
+
+        return 0;
     }
 
     @Override

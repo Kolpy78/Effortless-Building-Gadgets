@@ -5,9 +5,13 @@ import java.util.Locale;
 
 import org.lwjgl.input.Keyboard;
 
+import api.hbm.energymk2.IBatteryItem;
 import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import cofh.api.energy.IEnergyContainerItem;
 import net.mellow.effortless.Keybinds;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.buildmode.BaseBuildMode;
@@ -16,6 +20,7 @@ import net.mellow.effortless.buildmode.History;
 import net.mellow.effortless.buildmode.modes.*;
 import net.mellow.effortless.gui.GuiBuildingGadget;
 import net.mellow.effortless.network.IItemControlReceiver;
+import net.mellow.effortless.util.MathUtil;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -27,7 +32,11 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
-public class ItemBuildingGadget extends Item implements IItemRenderPreview, IItemGuiProvider, IItemControlReceiver {
+@Optional.InterfaceList({
+    @Optional.Interface(iface = "cofh.api.energy.IEnergyContainerItem", modid = "CoFHAPI"),
+    @Optional.Interface(iface = "api.hbm.energymk2.IBatteryItem", modid = "hbm"),
+})
+public class ItemBuildingGadget extends Item implements IItemRenderPreview, IItemGuiProvider, IItemControlReceiver, IEnergyContainerItem, IBatteryItem {
 
     public static enum BuildingMode {
         EXTENDED(new Extended(), 16, 16), // greater reach
@@ -59,6 +68,9 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> list, boolean bool) {
+        EnumChatFormatting chargeFormat = getEnergyStored(stack) >= capacity / 10 ? EnumChatFormatting.BLUE : EnumChatFormatting.RED;
+        if (Loader.isModLoaded("CoFHAPI")) list.add(chargeFormat + I18n.format("energy.stored.rf", MathUtil.getShortNumber(getEnergyStored(stack)), MathUtil.getShortNumber(getMaxEnergyStored(stack))));
+        if (Loader.isModLoaded("hbm")) list.add(chargeFormat + I18n.format("energy.stored.he", MathUtil.getShortNumber(getCharge(stack)), MathUtil.getShortNumber(getMaxCharge(stack))));
         list.add(EnumChatFormatting.YELLOW + I18n.format("hint.uikey.usage", Keyboard.getKeyName(Keybinds.uiKey.getKeyCode())));
     }
 
@@ -75,7 +87,19 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
 
         MovingObjectPosition mop = BuildModes.getMop(player, mode.handler.reach(stack));
 
-        mode.handler.add(stack, getSelected(stack), world, player, mop);
+        boolean requiresPower = !player.capabilities.isCreativeMode && (Loader.isModLoaded("CoFHAPI") || Loader.isModLoaded("hbm"));
+        int energy = stack.stackTagCompound.getInteger("energy");
+
+        if (requiresPower) {
+            // require 10% charge to operate
+            if (energy < capacity / 10) return stack;
+        }
+
+        int blocksPlaced = mode.handler.add(stack, getSelected(stack), world, player, mop);
+
+        if (requiresPower) {
+            stack.stackTagCompound.setInteger("energy", Math.max(0, energy - blocksPlaced * consumption));
+        }
 
         return stack;
     }
@@ -132,5 +156,85 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
             }
         }
     }
+
+    // POWERRRRRR
+    private int capacity = 1_000_000;
+    private int consumption = 100;
+
+
+    /// FE ///
+    @Override
+    public int receiveEnergy(ItemStack stack, int maxReceive, boolean simulate) {
+        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+        int energy = stack.stackTagCompound.getInteger("energy");
+        int energyReceived = Math.min(capacity - energy, maxReceive);
+
+        if (!simulate) {
+            energy += energyReceived;
+            stack.stackTagCompound.setInteger("energy", energy);
+        }
+
+        return energyReceived;
+    }
+
+    @Override
+    public int extractEnergy(ItemStack stack, int maxExtract, boolean simulate) {
+        return 0;
+    }
+
+    @Override
+    public int getEnergyStored(ItemStack stack) {
+        if (stack.stackTagCompound == null) return 0;
+        return stack.stackTagCompound.getInteger("energy");
+    }
+
+    @Override
+    public int getMaxEnergyStored(ItemStack stack) {
+        return capacity;
+    }
+    /// /FE ///
+
+
+    /// HE ///
+    @Override
+    public void chargeBattery(ItemStack stack, long power) {
+        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+        int energy = stack.stackTagCompound.getInteger("energy");
+        energy += Math.max(1, (int) (power / 5));
+        stack.stackTagCompound.setInteger("energy", energy);
+    }
+
+    @Override
+    public void setCharge(ItemStack stack, long power) {
+        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+        stack.stackTagCompound.setInteger("energy", (int) (power / 5));
+    }
+
+    @Override
+    public void dischargeBattery(ItemStack stack, long energy) {
+        
+    }
+
+    @Override
+    public long getCharge(ItemStack stack) {
+        if (stack.stackTagCompound == null) return 0;
+        return stack.stackTagCompound.getInteger("energy") * 5;
+    }
+
+    @Override
+    public long getMaxCharge(ItemStack stack) {
+        return capacity * 5;
+    }
+
+    @Override
+    public long getChargeRate(ItemStack stack) {
+        return 10_000;
+    }
+
+    @Override
+    public long getDischargeRate(ItemStack stack) {
+        return 0;
+    }
+    /// /HE ///
 
 }

@@ -17,27 +17,29 @@ import net.minecraft.world.World;
 public class Cube extends BaseBuildMode {
 
     @Override
-    public void add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
         BlockPos pos0 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
         BlockPos pos1 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos1"));
 
         if (pos0 == null) {
             pos0 = BlockPos.fromRaycastSide(mop);
-            if (pos0 == null) return;
+            if (pos0 == null) return 0;
 
             stack.stackTagCompound.setTag("pos0", pos0.save());
         } else if (pos1 == null) {
             pos1 = Floor.findFloor(player, pos0, true);
-            if (pos1 == null) return;
+            if (pos1 == null) return 0;
 
             stack.stackTagCompound.setTag("pos1", pos1.save());
         } else {
             BlockPos pos2 = findHeight(player, pos1, true);
 
-            buildBox(world, player, selected, pos0, pos2, false);
-
             clear(stack);
+            
+            return buildBox(world, player, selected, pos0, pos2, false);
         }
+
+        return 0;
     }
 
     @Override

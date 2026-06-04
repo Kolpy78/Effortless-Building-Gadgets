@@ -5,7 +5,8 @@ import org.lwjgl.input.Keyboard;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.InputEvent.KeyInputEvent;
+import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
+import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.mellow.effortless.items.IItemGuiProvider;
@@ -26,9 +27,12 @@ public class Keybinds {
         FMLCommonHandler.instance().bus().register(new Keybinds());
     }
 
+    // some mods are a bit funky with regular keybind handling when you require the user to hold a key...
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public void onKeyDown(KeyInputEvent event) {
+    public void postClientTick(ClientTickEvent event) {
+        if(event.phase != Phase.END) return;
+
         if (uiKey.getIsKeyPressed()) {
             EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
             ItemStack held = player.getHeldItem();
@@ -37,5 +41,5 @@ public class Keybinds {
             }
         }
     }
-    
+
 }

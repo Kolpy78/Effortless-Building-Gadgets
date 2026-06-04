@@ -13,10 +13,10 @@ import net.minecraft.world.World;
 public class Extended extends BaseBuildMode {
 
     @Override
-    public void add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
         BlockPos pos = BlockPos.fromRaycastSide(mop);
-        if (pos == null) return;
-        BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
+        if (pos == null) return 0;
+        return BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
     }
 
     @Override

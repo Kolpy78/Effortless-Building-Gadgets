@@ -19,16 +19,16 @@ import net.minecraft.world.World;
 
 public abstract class BaseBuildMode {
     
-    public abstract void add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop);
+    public abstract int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop);
     public abstract void clear(ItemStack stack);
 
     public int reach(ItemStack stack) {
         return 32;
     }
 
-    public static void buildBox(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
-        if (world.isRemote) return;
-        if (from == null || to == null) return;
+    public static int buildBox(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
+        if (world.isRemote) return 0;
+        if (from == null || to == null) return 0;
 
         List<BlockPos> positions = new ArrayList<>();
 
@@ -38,12 +38,12 @@ public abstract class BaseBuildMode {
             positions.add(new BlockPos(x, y, z));
         }
         
-        build(world, player, selected, positions, replaceAny);
+        return build(world, player, selected, positions, replaceAny);
     }
 
-    public static void build(World world, EntityPlayer player, BlockMeta selected, List<BlockPos> positions, boolean replaceAny) {
-        if (world.isRemote) return;
-        if (positions == null || positions.isEmpty()) return;
+    public static int build(World world, EntityPlayer player, BlockMeta selected, List<BlockPos> positions, boolean replaceAny) {
+        if (world.isRemote) return 0;
+        if (positions == null || positions.isEmpty()) return 0;
 
         boolean useItems = !player.capabilities.isCreativeMode;
 
@@ -51,8 +51,10 @@ public abstract class BaseBuildMode {
         ItemStack toDeplete = null;
         if (useItems) {
             toDeplete = getMatchingStack(player, selected);
-            if (toDeplete == null) return;
+            if (toDeplete == null) return 0;
         }
+
+        int blocksPlaced = 0;
 
         for (BlockPos pos : positions) {
             Block block = world.getBlock(pos.x, pos.y, pos.z);
@@ -79,11 +81,15 @@ public abstract class BaseBuildMode {
 
             previousState.add(new HistoryBlock(new BlockMeta(block, meta), selected, new BlockPos(pos.x, pos.y, pos.z)));
             world.setBlock(pos.x, pos.y, pos.z, selected.block, selected.meta, 3);
+
+            blocksPlaced++;
         }
 
         History.addUndo(player, previousState);
 
         cleanInventory(player);
+
+        return blocksPlaced;
     }
 
     public static ItemStack getMatchingStack(EntityPlayer player, BlockMeta selected) {

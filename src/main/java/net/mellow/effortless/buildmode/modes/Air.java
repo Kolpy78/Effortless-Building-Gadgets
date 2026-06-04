@@ -18,15 +18,15 @@ public class Air extends BaseBuildMode {
     }
 
     @Override
-    public void add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
-        if (mop == null) return;
+    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+        if (mop == null) return 0;
         if (mop.typeOfHit == MovingObjectType.MISS) {
             BlockPos pos = new BlockPos(mop.blockX, mop.blockY, mop.blockZ);
-            BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
+            return BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
         } else {
             BlockPos pos = BlockPos.fromRaycastSide(mop);
-            if (pos == null) return;
-            BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
+            if (pos == null) return 0;
+            return BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
         }
     }
 

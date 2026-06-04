@@ -12,6 +12,9 @@ buildingmode.cube.name=Cube
 
 buildingui.noblocks=No blocks in hotbar
 
+energy.stored.rf=Energy: %s / %s RF
+energy.stored.he=Power: %s / %s HE
+
 hint.uikey.usage=[ Hold %s to configure ]
 
 item.building_gadget.name=Building Gadget
