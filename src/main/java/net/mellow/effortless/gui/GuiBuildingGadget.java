@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -20,7 +21,6 @@ import net.mellow.effortless.network.NetworkHandler;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -56,6 +56,9 @@ public class GuiBuildingGadget extends GuiScreen {
     private BuildingOption switchToOptionName = null;
     private BuildingAction switchToOptionValue = null;
 
+    private long blockNameTimerMs;
+    private long lastMs;
+
     public GuiBuildingGadget(ItemStack stack) {
         this.gadget = stack;
     }
@@ -84,17 +87,46 @@ public class GuiBuildingGadget extends GuiScreen {
     }
 
     @Override
-    protected void actionPerformed(GuiButton btn) {
-        
-    }
-
-    @Override
     public void handleInput() {
         super.handleInput();
 
         if (!Keyboard.isKeyDown(Keybinds.uiKey.getKeyCode())) {
             this.mc.displayGuiScreen(null);
             this.mc.setIngameFocus();
+        }
+    }
+
+    @Override
+    public void handleMouseInput() {
+        super.handleMouseInput();
+
+        int scroll = Mouse.getEventDWheel();
+        if (scroll != 0) {
+            int index = usableBlocks.indexOf(currentBlock);
+
+            if (scroll > 0) index--;
+            if (scroll < 0) index++;
+
+            if (index >= usableBlocks.size()) index = 0;
+            if (index < 0) index = usableBlocks.size() - 1;
+
+            switchToBlock = usableBlocks.get(index);
+            blockNameTimerMs = 2_000;
+
+            switchBlock();
+        }
+    }
+
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) {
+        super.keyTyped(typedChar, keyCode);
+
+        int numberKey = Character.getNumericValue(typedChar) - 1;
+        if (numberKey >= 0 && numberKey < usableBlocks.size()) {
+            switchToBlock = usableBlocks.get(numberKey);
+            blockNameTimerMs = 2_000;
+
+            switchBlock();
         }
     }
 
@@ -322,13 +354,17 @@ public class GuiBuildingGadget extends GuiScreen {
         GL11.glEnable(GL12.GL_RESCALE_NORMAL);
         RenderHelper.enableGUIStandardItemLighting();
 
+        long thisMs = System.currentTimeMillis();
+        blockNameTimerMs -= thisMs - lastMs;
+        lastMs = thisMs;
+
         for (int i = 0; i < usableBlocks.size(); i++) {
             BlockMeta block = usableBlocks.get(i);
             double x = midX + i * btnWidth + i * padding + blockXOffset;
             double y = midY + blockYOffset;
             renderItem.renderItemIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), new ItemStack(block.block, 1, block.meta), (int)x + 4, (int)y + 4);
 
-            if (block.equals(switchToBlock)) {
+            if (switchToBlock != null ? block.equals(switchToBlock) : blockNameTimerMs > 0 && block.equals(currentBlock)) {
                 ItemStack stack = usableBlockStacks.get(i);
                 String text = I18n.format(stack.getItem().getUnlocalizedName(stack) + ".name");
                 int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
@@ -414,6 +450,11 @@ public class GuiBuildingGadget extends GuiScreen {
     @Override
     protected void mouseClicked(int x, int y, int key) {
         super.mouseClicked(x, y, key);
+        if(updateActions()) playClick();
+    }
+
+    private boolean updateActions() {
+        boolean performedAction = switchBlock();
 
         if (switchToMode != null) {
             NBTTagCompound data = new NBTTagCompound();
@@ -422,18 +463,7 @@ public class GuiBuildingGadget extends GuiScreen {
             NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
             currentMode = switchToMode;
 
-            playClick();
-        }
-
-        if (switchToBlock != null) {
-            NBTTagCompound data = new NBTTagCompound();
-            data.setInteger("block", Block.getIdFromBlock(switchToBlock.block));
-            data.setByte("meta", (byte)switchToBlock.meta);
-
-            NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
-            currentBlock = switchToBlock;
-
-            playClick();
+            performedAction = true;
         }
 
         if (performAction != null) {
@@ -442,7 +472,7 @@ public class GuiBuildingGadget extends GuiScreen {
 
             NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
 
-            playClick();
+            performedAction = true;
         }
 
         if (switchToOptionName != null && switchToOptionValue != null) {
@@ -453,8 +483,25 @@ public class GuiBuildingGadget extends GuiScreen {
             NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
             currentOptions.put(switchToOptionName, switchToOptionValue);
 
-            playClick();
+            performedAction = true;
         }
+
+        return performedAction;
+    }
+
+    private boolean switchBlock() {
+        if (switchToBlock != null) {
+            NBTTagCompound data = new NBTTagCompound();
+            data.setInteger("block", Block.getIdFromBlock(switchToBlock.block));
+            data.setByte("meta", (byte)switchToBlock.meta);
+
+            NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
+            currentBlock = switchToBlock;
+
+            return true;
+        }
+
+        return false;
     }
 
     @Override
