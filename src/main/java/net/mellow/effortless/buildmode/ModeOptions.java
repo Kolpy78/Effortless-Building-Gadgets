@@ -12,7 +12,7 @@ public class ModeOptions {
         LINE(new Line(), 32, 16), // lines
         WALL(new Wall(), 48, 16, BuildingOption.FILL), // walls
         FLOOR(new Floor(), 64, 16, BuildingOption.FILL), // floors
-        CUBE(new Cube(), 80, 16); // miney crafta
+        CUBE(new Cube(), 80, 16, BuildingOption.CUBE_FILL); // miney crafta
 
         public final BaseBuildMode handler;
         public final int iconX;
@@ -40,7 +40,11 @@ public class ModeOptions {
         REDO(32, 0),
 
         FULL(32, 32),
-        HOLLOW(48, 32);
+        HOLLOW(48, 32),
+
+        CUBE_FULL(64, 32),
+        CUBE_HOLLOW(80, 32),
+        CUBE_SKELETON(96, 32);
 
         public final int iconX;
         public final int iconY;
@@ -67,7 +71,8 @@ public class ModeOptions {
     }
 
     public static enum BuildingOption {
-        FILL(BuildingAction.FULL, BuildingAction.HOLLOW);
+        FILL(BuildingAction.FULL, BuildingAction.HOLLOW),
+        CUBE_FILL(BuildingAction.CUBE_FULL, BuildingAction.CUBE_HOLLOW, BuildingAction.CUBE_SKELETON);
 
         public final BuildingAction[] actions;
 

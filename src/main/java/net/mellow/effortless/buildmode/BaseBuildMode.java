@@ -61,7 +61,12 @@ public abstract class BaseBuildMode {
         if (from == null || to == null) return 0;
 
         List<BlockPos> positions = new ArrayList<>();
+        addBox(positions, from, to);
+        
+        return build(world, player, selected, placedMeta, positions, replaceAny);
+    }
 
+    private static void addBox(List<BlockPos> positions, BlockPos from, BlockPos to) {
         BlockPos min = BlockPos.min(from, to);
         BlockPos max = BlockPos.max(from, to);
 
@@ -70,8 +75,6 @@ public abstract class BaseBuildMode {
         for (int z = min.z; z <= max.z; z++) {
             positions.add(new BlockPos(x, y, z));
         }
-        
-        return build(world, player, selected, placedMeta, positions, replaceAny);
     }
 
     public static int buildHollowFloor(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
@@ -79,7 +82,12 @@ public abstract class BaseBuildMode {
         if (from == null || to == null) return 0;
 
         List<BlockPos> positions = new ArrayList<>();
+        addHollowFloor(positions, from, to);
 
+        return build(world, player, selected, placedMeta, positions, replaceAny);
+    }
+
+    private static void addHollowFloor(List<BlockPos> positions, BlockPos from, BlockPos to) {
         for (int x = Math.min(from.x, to.x); x <= Math.max(from.x, to.x); x++) {
             positions.add(new BlockPos(x, from.y, from.z));
             if (from.z != to.z) positions.add(new BlockPos(x, from.y, to.z));
@@ -89,8 +97,6 @@ public abstract class BaseBuildMode {
             positions.add(new BlockPos(from.x, from.y, z));
             if (from.x != to.x) positions.add(new BlockPos(to.x, from.y, z));
         }
-
-        return build(world, player, selected, placedMeta, positions, replaceAny);
     }
 
     public static int buildHollowWallX(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
@@ -131,6 +137,61 @@ public abstract class BaseBuildMode {
         return build(world, player, selected, placedMeta, positions, replaceAny);
     }
 
+    public static int buildHollowCube(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
+        if (world.isRemote) return 0;
+        if (from == null || to == null) return 0;
+
+        BlockPos min = BlockPos.min(from, to);
+        BlockPos max = BlockPos.max(from, to);
+
+        List<BlockPos> positions = new ArrayList<>();
+        addBox(positions, min, new BlockPos(max.x, min.y, max.z)); // bottom
+        if (min.y != max.y) {
+            addBox(positions, new BlockPos(min.x, max.y, min.z), max); // top
+        }
+
+        if (max.y - min.y > 1) {
+            addBox(positions, new BlockPos(min.x, min.y + 1, min.z), new BlockPos(min.x, max.y - 1, max.z)); // -X wall
+            
+            if (min.x != max.x) {
+                addBox(positions, new BlockPos(max.x, min.y + 1, min.z), new BlockPos(max.x, max.y - 1, max.z)); // +X wall
+            }
+
+            if (max.x - min.x > 1) {
+                addBox(positions, new BlockPos(min.x + 1, min.y + 1, min.z), new BlockPos(max.x - 1, max.y - 1, min.z)); // -Z wall
+
+                if (min.z != max.z) {
+                    addBox(positions, new BlockPos(min.x + 1, min.y + 1, max.z), new BlockPos(max.x - 1, max.y - 1, max.z)); // +Z wall
+                }
+            }
+        }
+
+        return build(world, player, selected, placedMeta, positions, replaceAny);
+    }
+
+    public static int buildSkeletonCube(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
+        if (world.isRemote) return 0;
+        if (from == null || to == null) return 0;
+
+        BlockPos min = BlockPos.min(from, to);
+        BlockPos max = BlockPos.max(from, to);
+
+        List<BlockPos> positions = new ArrayList<>();
+        addHollowFloor(positions, min, new BlockPos(max.x, min.y, max.z)); // bottom
+        if (min.y != max.y) {
+            addHollowFloor(positions, new BlockPos(min.x, max.y, min.z), max); // top
+
+            if (max.y - min.y > 1) {
+                addBox(positions, new BlockPos(min.x, min.y + 1, min.z), new BlockPos(min.x, max.y - 1, min.z));
+                addBox(positions, new BlockPos(min.x, min.y + 1, max.z), new BlockPos(min.x, max.y - 1, max.z));
+                addBox(positions, new BlockPos(max.x, min.y + 1, min.z), new BlockPos(max.x, max.y - 1, min.z));
+                addBox(positions, new BlockPos(max.x, min.y + 1, max.z), new BlockPos(max.x, max.y - 1, max.z));
+            }
+        }
+
+        return build(world, player, selected, placedMeta, positions, replaceAny);
+    }
+
     // selected - the block selected by the tool
     // toPlace  - the transformed block to be placed into the world
     public static int build(World world, EntityPlayer player, BlockMeta selected, int placedMeta, List<BlockPos> positions, boolean replaceAny) {
@@ -155,6 +216,7 @@ public abstract class BaseBuildMode {
             if (!replaceAny && !block.isReplaceable(world, pos.x, pos.y, pos.z)) continue;
 
             int meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
+            if (toPlace.block == block && toPlace.meta == meta) continue; // skip double placing
             if (block.hasTileEntity(meta)) continue;
 
             AxisAlignedBB bb = AxisAlignedBB.getBoundingBox(pos.x, pos.y, pos.z, pos.x + 1, pos.y + 1, pos.z + 1);
@@ -210,30 +272,18 @@ public abstract class BaseBuildMode {
     public abstract void render(ItemStack stack, World world, EntityPlayer player, float partialTicks);
 
     public static void renderBox(EntityPlayer player, float partialTicks, BlockPos from, BlockPos to) {
-        double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
-        double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
-        double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
-
         BlockPos min = BlockPos.min(from, to);
         BlockPos max = BlockPos.max(from, to);
 
-        double minX = min.x + 0.125;
-        double maxX = max.x + 0.875;
-        double minY = min.y + 0.125;
-        double maxY = max.y + 0.875;
-        double minZ = min.z + 0.125;
-        double maxZ = max.z + 0.875;
-        
-        GL11.glPushMatrix();
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glColor3f(1F, 1F, 1F);
-        
+        double minX = min.x + 0.075;
+        double maxX = max.x + 0.925;
+        double minY = min.y + 0.075;
+        double maxY = max.y + 0.925;
+        double minZ = min.z + 0.075;
+        double maxZ = max.z + 0.925;
+
         Tessellator tess = Tessellator.instance;
-        tess.setTranslation(-dx, -dy, -dz);
-        tess.startDrawing(GL11.GL_LINES);
-        tess.setBrightness(240);
-        tess.setColorRGBA_F(1F, 1F, 1F, 1F);
+        startLineDraw(tess, player, partialTicks);
         
         // top
         tess.addVertex(minX, maxY, minZ);
@@ -273,7 +323,27 @@ public abstract class BaseBuildMode {
 
         tess.addVertex(minX, minY, maxZ);
         tess.addVertex(minX, maxY, maxZ);
+
+        endLineDraw(tess);
+    }
+
+    public static void startLineDraw(Tessellator tess, EntityPlayer player, float partialTicks) {
+        double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
+        double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
+        double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
+
+        GL11.glPushMatrix();
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glColor3f(1F, 1F, 1F);
         
+        tess.setTranslation(-dx, -dy, -dz);
+        tess.startDrawing(GL11.GL_LINES);
+        tess.setBrightness(240);
+        tess.setColorRGBA_F(1F, 1F, 1F, 1F);
+    }
+
+    public static void endLineDraw(Tessellator tess) {
         tess.draw();
         tess.setTranslation(0, 0, 0);
         

@@ -7,7 +7,11 @@ import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
+import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
+import net.mellow.effortless.items.ItemBuildingGadget;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
@@ -41,6 +45,16 @@ public class Cube extends BaseBuildMode {
             int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
 
             clear(stack);
+
+            BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.CUBE_FILL);
+
+            if (pos0.x != pos2.x && pos0.y != pos2.y && pos0.z != pos2.z) {
+                if (fillMode == BuildingAction.CUBE_SKELETON) {
+                    return buildSkeletonCube(world, player, selected, placedMeta, pos0, pos2, false);
+                } else if (fillMode == BuildingAction.CUBE_HOLLOW) {
+                    return buildHollowCube(world, player, selected, placedMeta, pos0, pos2, false);
+                }
+            }
             
             return buildBox(world, player, selected, placedMeta, pos0, pos2, false);
         }
@@ -61,20 +75,126 @@ public class Cube extends BaseBuildMode {
 
         if (pos0 == null) {
             MovingObjectPosition mop = BuildModes.getMop(player, reach(stack));
-            if (mop != null) {
-                Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
-            }
+            if (mop == null) return;
+
+            Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
         } else if (pos1 == null) {
             pos1 = Floor.findFloor(player, pos0, true);
-            if (pos1 != null) {
-                renderBox(player, partialTicks, pos0, pos1);
-            }
+            if (pos1 == null) return;
+
+            renderBox(player, partialTicks, pos0, pos1);
         } else {
             BlockPos pos2 = findHeight(player, pos1, true);
-            if (pos2 != null) {
-                renderBox(player, partialTicks, pos0, pos2);
+            if (pos2 == null) return;
+
+            renderBox(player, partialTicks, pos0, pos2);
+
+            BlockPos min = BlockPos.min(pos0, pos2);
+            BlockPos max = BlockPos.max(pos0, pos2);
+            
+            BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.CUBE_FILL);
+            if (fillMode != BuildingAction.CUBE_FULL && (max.x - min.x > 1 && max.y - min.y > 1 && max.z - min.z > 1)) {
+                renderBox(player, partialTicks, min.add(1, 1, 1), max.add(-1, -1, -1));
+
+                if (fillMode == BuildingAction.CUBE_SKELETON) {
+                    drawInnerFaces(player, min, max, partialTicks);
+                }
             }
         }
+    }
+
+    private static void drawInnerFaces(EntityPlayer player, BlockPos min, BlockPos max, float partialTicks) {
+        double minX = min.x + 0.075;
+        double maxX = max.x + 0.925;
+        double minY = min.y + 0.075;
+        double maxY = max.y + 0.925;
+        double minZ = min.z + 0.075;
+        double maxZ = max.z + 0.925;
+
+        Tessellator tess = Tessellator.instance;
+        startLineDraw(tess, player, partialTicks);
+        
+        // top
+        tess.addVertex(minX + 1, maxY, minZ + 1);
+        tess.addVertex(minX + 1, maxY, maxZ - 1);
+        
+        tess.addVertex(minX + 1, maxY, maxZ - 1);
+        tess.addVertex(maxX - 1, maxY, maxZ - 1);
+        
+        tess.addVertex(maxX - 1, maxY, maxZ - 1);
+        tess.addVertex(maxX - 1, maxY, minZ + 1);
+
+        tess.addVertex(maxX - 1, maxY, minZ + 1);
+        tess.addVertex(minX + 1, maxY, minZ + 1);
+        
+        // bottom
+        tess.addVertex(minX + 1, minY, minZ + 1);
+        tess.addVertex(minX + 1, minY, maxZ - 1);
+        
+        tess.addVertex(minX + 1, minY, maxZ - 1);
+        tess.addVertex(maxX - 1, minY, maxZ - 1);
+        
+        tess.addVertex(maxX - 1, minY, maxZ - 1);
+        tess.addVertex(maxX - 1, minY, minZ + 1);
+
+        tess.addVertex(maxX - 1, minY, minZ + 1);
+        tess.addVertex(minX + 1, minY, minZ + 1);
+
+        // -z
+        tess.addVertex(minX + 1, minY + 1, minZ);
+        tess.addVertex(minX + 1, maxY - 1, minZ);
+
+        tess.addVertex(minX + 1, maxY - 1, minZ);
+        tess.addVertex(maxX - 1, maxY - 1, minZ);
+
+        tess.addVertex(maxX - 1, maxY - 1, minZ);
+        tess.addVertex(maxX - 1, minY + 1, minZ);
+
+        tess.addVertex(maxX - 1, minY + 1, minZ);
+        tess.addVertex(minX + 1, minY + 1, minZ);
+
+        // +z
+        tess.addVertex(minX + 1, minY + 1, maxZ);
+        tess.addVertex(minX + 1, maxY - 1, maxZ);
+
+        tess.addVertex(minX + 1, maxY - 1, maxZ);
+        tess.addVertex(maxX - 1, maxY - 1, maxZ);
+
+        tess.addVertex(maxX - 1, maxY - 1, maxZ);
+        tess.addVertex(maxX - 1, minY + 1, maxZ);
+
+        tess.addVertex(maxX - 1, minY + 1, maxZ);
+        tess.addVertex(minX + 1, minY + 1, maxZ);
+
+        // -x
+        tess.addVertex(minX, minY + 1, minZ + 1);
+        tess.addVertex(minX, maxY - 1, minZ + 1);
+
+        tess.addVertex(minX, maxY - 1, minZ + 1);
+        tess.addVertex(minX, maxY - 1, maxZ - 1);
+
+        tess.addVertex(minX, maxY - 1, maxZ - 1);
+        tess.addVertex(minX, minY + 1, maxZ - 1);
+
+        tess.addVertex(minX, minY + 1, maxZ - 1);
+        tess.addVertex(minX, minY + 1, minZ + 1);
+
+        // +x
+        tess.addVertex(maxX, minY + 1, minZ + 1);
+        tess.addVertex(maxX, maxY - 1, minZ + 1);
+
+        tess.addVertex(maxX, maxY - 1, minZ + 1);
+        tess.addVertex(maxX, maxY - 1, maxZ - 1);
+
+        tess.addVertex(maxX, maxY - 1, maxZ - 1);
+        tess.addVertex(maxX, minY + 1, maxZ - 1);
+
+        tess.addVertex(maxX, minY + 1, maxZ - 1);
+        tess.addVertex(maxX, minY + 1, minZ + 1);
+        
+        // yeah, that was stupid
+
+        endLineDraw(tess);
     }
 
     public static BlockPos findHeight(EntityPlayer player, BlockPos secondPos, boolean skipRaytrace) {
