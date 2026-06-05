@@ -25,6 +25,9 @@ public class Cube extends BaseBuildMode {
             pos0 = BlockPos.fromRaycastSide(mop);
             if (pos0 == null) return 0;
 
+            int placedMeta = getFinalPlacedMeta(selected, world, player, pos0.x, pos0.y, pos0.z, mop.sideHit, mop.hitVec);
+
+            stack.stackTagCompound.setInteger("placedMeta", placedMeta);
             stack.stackTagCompound.setTag("pos0", pos0.save());
         } else if (pos1 == null) {
             pos1 = Floor.findFloor(player, pos0, true);
@@ -33,10 +36,13 @@ public class Cube extends BaseBuildMode {
             stack.stackTagCompound.setTag("pos1", pos1.save());
         } else {
             BlockPos pos2 = findHeight(player, pos1, true);
+            if (pos2 == null) return 0;
+
+            int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
 
             clear(stack);
             
-            return buildBox(world, player, selected, pos0, pos2, false);
+            return buildBox(world, player, selected, placedMeta, pos0, pos2, false);
         }
 
         return 0;

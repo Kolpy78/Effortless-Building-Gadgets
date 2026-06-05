@@ -11,10 +11,10 @@ import net.mellow.effortless.buildmode.History.HistoryBlock;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 public abstract class BaseBuildMode {
@@ -26,7 +26,37 @@ public abstract class BaseBuildMode {
         return 32;
     }
 
-    public static int buildBox(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
+    // will place and immediately remove the block once it finds the final meta
+    // x y z is the final block position, not the block it is placed on
+    public static int getFinalPlacedMeta(BlockMeta selected, World world, EntityPlayer player, int x, int y, int z, int side, Vec3 hitVector) {
+
+        float subX = (float)hitVector.xCoord - (float)x;
+        float subY = (float)hitVector.yCoord - (float)y;
+        float subZ = (float)hitVector.zCoord - (float)z;
+
+        BlockMeta was = new BlockMeta(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
+
+        ItemStack stack = new ItemStack(selected.block, 1, selected.meta);
+        int meta = stack.getItem().getMetadata(stack.getItemDamage());
+        meta = selected.block.onBlockPlaced(world, x, y, z, side, subX, subY, subZ, meta);
+
+        if (!world.setBlock(x, y, z, selected.block, meta, 0)) {
+            return meta;
+        }
+
+        if (world.getBlock(x, y, z) == selected.block) {
+            selected.block.onBlockPlacedBy(world, x, y, z, player, stack);
+            selected.block.onPostBlockPlaced(world, x, y, z, meta);
+        }
+
+        meta = world.getBlockMetadata(x, y, z);
+
+        world.setBlock(x, y, z, was.block, was.meta, 2);
+
+        return meta;
+    }
+
+    public static int buildBox(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
         if (world.isRemote) return 0;
         if (from == null || to == null) return 0;
 
@@ -41,10 +71,10 @@ public abstract class BaseBuildMode {
             positions.add(new BlockPos(x, y, z));
         }
         
-        return build(world, player, selected, positions, replaceAny);
+        return build(world, player, selected, placedMeta, positions, replaceAny);
     }
 
-    public static int buildHollowFloor(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
+    public static int buildHollowFloor(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
         if (world.isRemote) return 0;
         if (from == null || to == null) return 0;
 
@@ -60,10 +90,10 @@ public abstract class BaseBuildMode {
             if (from.x != to.x) positions.add(new BlockPos(to.x, from.y, z));
         }
 
-        return build(world, player, selected, positions, replaceAny);
+        return build(world, player, selected, placedMeta, positions, replaceAny);
     }
 
-    public static int buildHollowWallX(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
+    public static int buildHollowWallX(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
         if (world.isRemote) return 0;
         if (from == null || to == null) return 0;
 
@@ -79,10 +109,10 @@ public abstract class BaseBuildMode {
             if (from.z != to.z) positions.add(new BlockPos(from.x, y, to.z));
         }
 
-        return build(world, player, selected, positions, replaceAny);
+        return build(world, player, selected, placedMeta, positions, replaceAny);
     }
 
-    public static int buildHollowWallZ(World world, EntityPlayer player, BlockMeta selected, BlockPos from, BlockPos to, boolean replaceAny) {
+    public static int buildHollowWallZ(World world, EntityPlayer player, BlockMeta selected, int placedMeta, BlockPos from, BlockPos to, boolean replaceAny) {
         if (world.isRemote) return 0;
         if (from == null || to == null) return 0;
 
@@ -98,10 +128,12 @@ public abstract class BaseBuildMode {
             if (from.x != to.x) positions.add(new BlockPos(to.x, y, from.z));
         }
 
-        return build(world, player, selected, positions, replaceAny);
+        return build(world, player, selected, placedMeta, positions, replaceAny);
     }
 
-    public static int build(World world, EntityPlayer player, BlockMeta selected, List<BlockPos> positions, boolean replaceAny) {
+    // selected - the block selected by the tool
+    // toPlace  - the transformed block to be placed into the world
+    public static int build(World world, EntityPlayer player, BlockMeta selected, int placedMeta, List<BlockPos> positions, boolean replaceAny) {
         if (world.isRemote) return 0;
         if (positions == null || positions.isEmpty()) return 0;
 
@@ -115,6 +147,8 @@ public abstract class BaseBuildMode {
         }
 
         int blocksPlaced = 0;
+
+        BlockMeta toPlace = new BlockMeta(selected.block, placedMeta);
 
         for (BlockPos pos : positions) {
             Block block = world.getBlock(pos.x, pos.y, pos.z);
@@ -139,8 +173,8 @@ public abstract class BaseBuildMode {
                 toDeplete.stackSize--;
             }
 
-            previousState.add(new HistoryBlock(new BlockMeta(block, meta), selected, new BlockPos(pos.x, pos.y, pos.z)));
-            world.setBlock(pos.x, pos.y, pos.z, selected.block, selected.meta, 3);
+            previousState.add(new HistoryBlock(new BlockMeta(block, meta), toPlace, new BlockPos(pos.x, pos.y, pos.z)));
+            world.setBlock(pos.x, pos.y, pos.z, toPlace.block, toPlace.meta, 3);
 
             blocksPlaced++;
         }
@@ -156,11 +190,8 @@ public abstract class BaseBuildMode {
         for (int i = player.inventory.mainInventory.length - 1; i >= 0; i--) {
             ItemStack stack = player.inventory.mainInventory[i];
 
-            if (stack == null) continue;
-            if (stack.stackSize <= 0) continue;
-            if (!(stack.getItem() instanceof ItemBlock)) continue;
-
-            BlockMeta block = new BlockMeta(((ItemBlock) stack.getItem()).field_150939_a, stack.getItem().getMetadata(stack.getItemDamage()));
+            BlockMeta block = BlockMeta.fromStack(stack);
+            if (block == null) continue;
 
             if (block.equals(selected)) return stack;
         }

@@ -6,9 +6,11 @@ import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public class Air extends BaseBuildMode {
 
@@ -22,11 +24,30 @@ public class Air extends BaseBuildMode {
         if (mop == null) return 0;
         if (mop.typeOfHit == MovingObjectType.MISS) {
             BlockPos pos = new BlockPos(mop.blockX, mop.blockY, mop.blockZ);
-            return BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
+
+            // we gotta figure out which "side" is closest to facing the player
+            ForgeDirection facing = ForgeDirection.UNKNOWN;
+            if (player.rotationPitch > 45) {
+                facing = ForgeDirection.DOWN;
+            } else if (player.rotationPitch < 45) {
+                facing = ForgeDirection.UP;
+            } else {
+                int rot = MathHelper.floor_double((double)(player.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
+
+                if (rot == 0) facing = ForgeDirection.NORTH;
+                if (rot == 1) facing = ForgeDirection.EAST;
+                if (rot == 2) facing = ForgeDirection.SOUTH;
+                if (rot == 3) facing = ForgeDirection.WEST;
+            }
+
+            int placedMeta = getFinalPlacedMeta(selected, world, player, pos.x, pos.y, pos.z, facing.ordinal(), mop.hitVec);
+            return buildBox(world, player, selected, placedMeta, pos, pos, false);
         } else {
             BlockPos pos = BlockPos.fromRaycastSide(mop);
             if (pos == null) return 0;
-            return BaseBuildMode.buildBox(world, player, selected, pos, pos, false);
+
+            int placedMeta = getFinalPlacedMeta(selected, world, player, pos.x, pos.y, pos.z, mop.sideHit, mop.hitVec);
+            return buildBox(world, player, selected, placedMeta, pos, pos, false);
         }
     }
 

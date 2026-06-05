@@ -27,9 +27,15 @@ public class Wall extends BaseBuildMode {
             from = BlockPos.fromRaycastSide(mop);
             if (from == null) return 0;
 
+            int placedMeta = getFinalPlacedMeta(selected, world, player, from.x, from.y, from.z, mop.sideHit, mop.hitVec);
+
             stack.stackTagCompound.setTag("pos0", from.save());
+            stack.stackTagCompound.setInteger("placedMeta", placedMeta);
         } else {
             BlockPos to = findWall(player, from, true);
+            if (to == null) return 0;
+
+            int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
 
             clear(stack);
             
@@ -37,13 +43,13 @@ public class Wall extends BaseBuildMode {
             
             if (fillMode == BuildingAction.HOLLOW) {
                 if (from.x != to.x) {
-                    return buildHollowWallZ(world, player, selected, from, to, false);
+                    return buildHollowWallZ(world, player, selected, placedMeta, from, to, false);
                 } else if (from.z != to.z) {
-                    return buildHollowWallX(world, player, selected, from, to, false);
+                    return buildHollowWallX(world, player, selected, placedMeta, from, to, false);
                 }
             }
             
-            return buildBox(world, player, selected, from, to, false);
+            return buildBox(world, player, selected, placedMeta, from, to, false);
         }
 
         return 0;

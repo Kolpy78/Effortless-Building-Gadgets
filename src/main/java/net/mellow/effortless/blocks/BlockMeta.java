@@ -2,6 +2,8 @@ package net.mellow.effortless.blocks;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
 
 public class BlockMeta {
 
@@ -29,6 +31,12 @@ public class BlockMeta {
 
         this.block = block;
         this.meta = meta;
+    }
+
+    public static BlockMeta fromStack(ItemStack stack) {
+        if (stack == null || stack.stackSize <= 0 || !(stack.getItem() instanceof ItemBlock)) return null;
+        // return new BlockMeta(((ItemBlock) stack.getItem()).field_150939_a, stack.getItem().getMetadata(stack.getItemDamage()));
+        return new BlockMeta(((ItemBlock) stack.getItem()).field_150939_a, stack.getItemDamage()); // don't transform yet
     }
 
     @Override

@@ -28,7 +28,6 @@ import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
@@ -73,10 +72,8 @@ public class GuiBuildingGadget extends GuiScreen {
         for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++) {
             ItemStack stack = player.inventory.getStackInSlot(i);
 
-            if (stack == null) continue;
-            if (!(stack.getItem() instanceof ItemBlock)) continue;
-
-            BlockMeta type = new BlockMeta(((ItemBlock) stack.getItem()).field_150939_a, stack.getItem().getMetadata(stack.getItemDamage()));
+            BlockMeta type = BlockMeta.fromStack(stack);
+            if (type == null) continue;
 
             if (type.block.hasTileEntity(type.meta)) continue;
             if (usableBlocks.contains(type)) continue;
