@@ -1,4 +1,4 @@
-package net.mellow.effortless;
+package net.mellow.effortless.events;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;

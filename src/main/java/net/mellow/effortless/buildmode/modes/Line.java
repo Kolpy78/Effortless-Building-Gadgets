@@ -53,10 +53,10 @@ public class Line extends BaseBuildMode {
                 Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
             }
         } else {
-            BlockPos to = findLine(player, from, true);;
+            BlockPos to = findLine(player, from, true);
             if (to == null) return;
     
-            renderBox(player, partialTicks, from, to);
+            renderBox(player, partialTicks, from, to, true);
         }
     }
 

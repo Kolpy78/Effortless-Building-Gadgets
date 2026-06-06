@@ -9,6 +9,7 @@ import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.History.HistoryBlock;
 import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -272,8 +273,22 @@ public abstract class BaseBuildMode {
     public abstract void render(ItemStack stack, World world, EntityPlayer player, float partialTicks);
 
     public static void renderBox(EntityPlayer player, float partialTicks, BlockPos from, BlockPos to) {
+        renderBox(player, partialTicks, from, to, false);
+    }
+
+    public static void renderBox(EntityPlayer player, float partialTicks, BlockPos from, BlockPos to, boolean addToHighlight) {
         BlockPos min = BlockPos.min(from, to);
         BlockPos max = BlockPos.max(from, to);
+
+        if (addToHighlight) {
+            List<String> values = new ArrayList<>();
+            if (min.x != max.x) values.add("" + (max.x - min.x + 1));
+            if (min.y != max.y) values.add("" + (max.y - min.y + 1));
+            if (min.z != max.z) values.add("" + (max.z - min.z + 1));
+
+            highlightTitle = !values.isEmpty() ? String.join("x", values) : "1";
+            Minecraft.getMinecraft().ingameGUI.remainingHighlightTicks = 40;
+        }
 
         double minX = min.x + 0.075;
         double maxX = max.x + 0.925;
@@ -350,6 +365,16 @@ public abstract class BaseBuildMode {
         GL11.glEnable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glPopMatrix();
+    }
+
+    protected static String highlightTitle;
+    
+    public String getItemHighlight(ItemStack stack) {
+        if (highlightTitle == null) return null;
+
+        String title = highlightTitle;
+        highlightTitle = null;
+        return title;
     }
 
 }

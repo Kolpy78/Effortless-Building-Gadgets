@@ -82,12 +82,12 @@ public class Cube extends BaseBuildMode {
             pos1 = Floor.findFloor(player, pos0, true);
             if (pos1 == null) return;
 
-            renderBox(player, partialTicks, pos0, pos1);
+            renderBox(player, partialTicks, pos0, pos1, true);
         } else {
             BlockPos pos2 = findHeight(player, pos1, true);
             if (pos2 == null) return;
 
-            renderBox(player, partialTicks, pos0, pos2);
+            renderBox(player, partialTicks, pos0, pos2, true);
 
             BlockPos min = BlockPos.min(pos0, pos2);
             BlockPos max = BlockPos.max(pos0, pos2);

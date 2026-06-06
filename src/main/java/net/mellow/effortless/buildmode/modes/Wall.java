@@ -72,7 +72,7 @@ public class Wall extends BaseBuildMode {
             BlockPos to = findWall(player, from, true);;
             if (to == null) return;
             
-            renderBox(player, partialTicks, from, to);
+            renderBox(player, partialTicks, from, to, true);
             
             BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
             if (fillMode == BuildingAction.HOLLOW && Math.abs(from.y - to.y) > 1) {

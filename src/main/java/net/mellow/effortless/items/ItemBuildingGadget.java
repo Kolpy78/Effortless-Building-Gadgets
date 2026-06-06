@@ -62,6 +62,17 @@ public class ItemBuildingGadget extends Item implements IItemRenderPreview, IIte
         list.add(EnumChatFormatting.YELLOW + I18n.format("hint.uikey.usage", Keyboard.getKeyName(Keybinds.uiKey.getKeyCode())));
     }
 
+    public static boolean isRenderingOverlay = true;
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        if (isRenderingOverlay) {
+            String overlayOverride = getMode(stack).handler.getItemHighlight(stack);
+            if (overlayOverride != null) return overlayOverride;
+        }
+        return super.getItemStackDisplayName(stack);
+    }
+
     // IF WE PUT ROCKS IN THE SHAPE OF A RUNWAY GOD WILL GIVE US HIGH-FRUCTOSE CORN SYRUP
     @Override
     public int getMaxItemUseDuration(ItemStack stack) {
