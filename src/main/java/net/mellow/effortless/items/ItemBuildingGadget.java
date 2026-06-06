@@ -92,12 +92,6 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         return super.getItemStackDisplayName(stack);
     }
 
-    // IF WE PUT ROCKS IN THE SHAPE OF A RUNWAY GOD WILL GIVE US HIGH-FRUCTOSE CORN SYRUP
-    @Override
-    public int getMaxItemUseDuration(ItemStack stack) {
-        return 1;
-    }
-
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
@@ -125,8 +119,6 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         if (requiresPower) {
             stack.stackTagCompound.setInteger("energy", Math.max(0, energy - blocksPlaced * consumption));
         }
-        
-        if(!world.isRemote && blocksPlaced > 0) player.inventoryContainer.detectAndSendChanges();
 
         return stack;
     }

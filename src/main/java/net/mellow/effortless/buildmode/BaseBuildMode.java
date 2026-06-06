@@ -246,6 +246,8 @@ public abstract class BaseBuildMode {
 
         cleanInventory(player);
 
+        world.playSoundEffect(player.posX, player.posY, player.posZ, selected.block.stepSound.func_150496_b(), (selected.block.stepSound.getVolume() + 1.0F) / 2.0F, selected.block.stepSound.getPitch() * 0.8F);
+
         return blocksPlaced;
     }
 
@@ -268,6 +270,8 @@ public abstract class BaseBuildMode {
             ItemStack stack = player.inventory.mainInventory[i];
             if (stack != null && stack.stackSize <= 0) player.inventory.mainInventory[i] = null;
         }
+
+        player.inventoryContainer.detectAndSendChanges();
     }
 
     public abstract void render(ItemStack stack, World world, EntityPlayer player, float partialTicks);
@@ -367,7 +371,7 @@ public abstract class BaseBuildMode {
         GL11.glPopMatrix();
     }
 
-    protected static String highlightTitle;
+    public static String highlightTitle;
     
     public String getItemHighlight(ItemStack stack) {
         if (highlightTitle == null) return null;
