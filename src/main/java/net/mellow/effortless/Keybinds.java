@@ -9,6 +9,7 @@ import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.items.IItemGuiProvider;
 import net.minecraft.client.Minecraft;
@@ -39,15 +40,13 @@ public class Keybinds {
             EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
 
             ItemStack held = player.getHeldItem();
-            if (held != null) {
-                
-                if (held.getItem() instanceof IItemGuiProvider) {
-                    ((IItemGuiProvider) held.getItem()).provideGui(held, player, held);
-                } else if (held.getItem() instanceof ItemBlock) {
-                    ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
-                    if (gadget != null) {
-                        ((IItemGuiProvider) gadget.getItem()).provideGui(gadget, player, held);
-                    }
+            if (held != null && held.getItem() instanceof IItemGuiProvider) {
+                ((IItemGuiProvider) held.getItem()).provideGui(held, player, held);
+            } else if (held == null || held.getItem() instanceof ItemBlock) {
+                BlockMeta selected = BlockMeta.fromStack(held);
+                ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
+                if (gadget != null && (selected == null || !selected.block.hasTileEntity(selected.meta))) {
+                    ((IItemGuiProvider) gadget.getItem()).provideGui(gadget, player, held);
                 }
             }
         }

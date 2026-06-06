@@ -125,6 +125,8 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         if (requiresPower) {
             stack.stackTagCompound.setInteger("energy", Math.max(0, energy - blocksPlaced * consumption));
         }
+        
+        if(!world.isRemote && blocksPlaced > 0) player.inventoryContainer.detectAndSendChanges();
 
         return stack;
     }

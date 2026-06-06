@@ -53,6 +53,9 @@ public class CommonEvents {
         ItemStack held = event.entityPlayer.getHeldItem();
         if (held == null || !(held.getItem() instanceof ItemBlock)) return;
 
+        BlockMeta selected = BlockMeta.fromStack(held);
+        if (selected.block.hasTileEntity(selected.meta)) return;
+
         if (ItemBuildingGadget.getMode(gadget).handler == null) return;
 
         ItemBuildingGadget gadgetItem = (ItemBuildingGadget) gadget.getItem();
