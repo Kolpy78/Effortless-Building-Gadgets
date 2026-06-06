@@ -6,6 +6,6 @@ import net.minecraft.item.ItemStack;
 public interface IItemGuiProvider {
 
     // for items that show a GUI when LALT is pressed
-    public void provideGui(ItemStack stack, EntityPlayer player);
+    public void provideGui(ItemStack stack, EntityPlayer player, ItemStack held);
 
 }

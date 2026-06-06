@@ -1,9 +1,12 @@
 package net.mellow.effortless;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import net.mellow.effortless.compat.Compat;
+import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.events.CommonEvents;
 import net.mellow.effortless.items.ModItems;
 import net.mellow.effortless.network.NetworkHandler;
@@ -18,6 +21,8 @@ public class CommonProxy {
         Effortless.LOG.info("Loading Effortless Builders Tools - version " + Tags.VERSION);
 
         ModItems.register();
+
+        if (Loader.isModLoaded(Compat.MODID_BAUBLES)) CompatBaublesExpanded.preInit();
     }
 
     // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)
@@ -30,6 +35,8 @@ public class CommonProxy {
     public void postInit(FMLPostInitializationEvent event) {
         // Register crafting recipe well after other mods have initialised their oredicts, for deep integration
         Crafting.register();
+        
+        if (Loader.isModLoaded(Compat.MODID_BAUBLES)) CompatBaublesExpanded.postInit();
     }
 
     // register server commands in this event handler (Remove if not needed)

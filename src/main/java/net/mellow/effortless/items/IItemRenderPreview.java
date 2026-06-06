@@ -3,8 +3,10 @@ package net.mellow.effortless.items;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
@@ -30,8 +32,15 @@ public interface IItemRenderPreview {
 
             ItemStack held = player.getHeldItem();
 
-            if (held != null && held.getItem() instanceof IItemRenderPreview) {
-                ((IItemRenderPreview) held.getItem()).render(world, player, held, event.partialTicks);
+            if (held != null) {
+                if (held.getItem() instanceof IItemRenderPreview) {
+                    ((IItemRenderPreview) held.getItem()).render(world, player, held, event.partialTicks);
+                } else if (held.getItem() instanceof ItemBlock) {
+                    ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
+                    if (gadget != null) {
+                        ((IItemRenderPreview) gadget.getItem()).render(world, player, gadget, event.partialTicks);
+                    }
+                }
             }
         }
 

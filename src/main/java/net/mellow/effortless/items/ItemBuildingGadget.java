@@ -7,6 +7,9 @@ import java.util.Map;
 import org.lwjgl.input.Keyboard;
 
 import api.hbm.energymk2.IBatteryItem;
+import baubles.api.BaubleType;
+import baubles.api.expanded.BaubleExpandedSlots;
+import baubles.api.expanded.IBaubleExpanded;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Optional;
@@ -20,6 +23,7 @@ import net.mellow.effortless.buildmode.History;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingMode;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
+import net.mellow.effortless.compat.Compat;
 import net.mellow.effortless.gui.GuiBuildingGadget;
 import net.mellow.effortless.network.IItemControlReceiver;
 import net.mellow.effortless.util.MathUtil;
@@ -36,10 +40,11 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
 @Optional.InterfaceList({
-    @Optional.Interface(iface = "cofh.api.energy.IEnergyContainerItem", modid = "CoFHAPI"),
-    @Optional.Interface(iface = "api.hbm.energymk2.IBatteryItem", modid = "hbm"),
+    @Optional.Interface(iface = "cofh.api.energy.IEnergyContainerItem", modid = Compat.MODID_COFH),
+    @Optional.Interface(iface = "api.hbm.energymk2.IBatteryItem", modid = Compat.MODID_NTM),
+    @Optional.Interface(iface = "baubles.api.expanded.IBaubleExpanded", modid = Compat.MODID_BAUBLES),
 })
-public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRenderPreview, IItemGuiProvider, IItemControlReceiver, IEnergyContainerItem, IBatteryItem {
+public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRenderPreview, IItemGuiProvider, IItemControlReceiver, IEnergyContainerItem, IBatteryItem, IBaubleExpanded {
 
     // why ItemFlintAndSteel?
     // A bunch of mods like Adventure Backpacks use these classes to determine if something is a "tool",
@@ -78,8 +83,11 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     @Override
     public String getItemStackDisplayName(ItemStack stack) {
         if (isRenderingOverlay) {
-            String overlayOverride = getMode(stack).handler.getItemHighlight(stack);
-            if (overlayOverride != null) return overlayOverride;
+            BuildingMode mode = getMode(stack);
+            if (mode.handler != null) {
+                String overlayOverride = mode.handler.getItemHighlight(stack);
+                if (overlayOverride != null) return overlayOverride;
+            }
         }
         return super.getItemStackDisplayName(stack);
     }
@@ -93,7 +101,14 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+        return onItemRightClick(stack, world, player, getSelected(stack));
+    }
+
+    public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player, BlockMeta selected) {
+        if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
+
         BuildingMode mode = getMode(stack);
+        if (mode.handler == null) return stack;
 
         MovingObjectPosition mop = BuildModes.getMop(player, mode.handler.reach(stack));
 
@@ -105,7 +120,7 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
             if (energy < capacity / 10) return stack;
         }
 
-        int blocksPlaced = mode.handler.add(stack, getSelected(stack), world, player, mop);
+        int blocksPlaced = mode.handler.add(stack, selected, world, player, mop);
 
         if (requiresPower) {
             stack.stackTagCompound.setInteger("energy", Math.max(0, energy - blocksPlaced * consumption));
@@ -116,7 +131,10 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
 
     @Override
     public boolean onEntitySwing(EntityLivingBase entityLiving, ItemStack stack) {
-        getMode(stack).handler.clear(stack);
+        BuildingMode mode = getMode(stack);
+        if (mode.handler == null) return false;
+
+        mode.handler.clear(stack);
         return false;
     }
 
@@ -139,16 +157,18 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
 
     public static BlockMeta getSelected(ItemStack stack) {
         if (stack.stackTagCompound == null) return new BlockMeta(Blocks.stone, 0);
-        return new BlockMeta(stack.stackTagCompound.getInteger("block"), stack.stackTagCompound.getByte("meta"));
+        BlockMeta selected = new BlockMeta(stack.stackTagCompound.getInteger("block"), stack.stackTagCompound.getByte("meta"));
+        if (selected == null || selected.block == Blocks.air) selected = new BlockMeta(Blocks.stone, 0);
+        return selected;
     }
 
     // mode is stored as a string so inserting new modes won't fuck up existing tools
     public static BuildingMode getMode(ItemStack stack) {
-        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("mode")) return BuildingMode.values()[0];
+        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("mode")) return BuildingMode.values()[1];
         try {
             return BuildingMode.valueOf(stack.stackTagCompound.getString("mode"));
         } catch (IllegalArgumentException ex) {
-            return BuildingMode.values()[0];
+            return BuildingMode.values()[1];
         }
     }
 
@@ -180,17 +200,22 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     @Override
     public void render(World world, EntityPlayer player, ItemStack stack, float partialTicks) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
-        getMode(stack).handler.render(stack, world, player, partialTicks);
+        BuildingMode mode = getMode(stack);
+        if (mode.handler == null) return;
+        mode.handler.render(stack, world, player, partialTicks);
     }
 
     @Override
-    public void provideGui(ItemStack stack, EntityPlayer player) {
-        FMLCommonHandler.instance().showGuiScreen(new GuiBuildingGadget(stack));
+    public void provideGui(ItemStack stack, EntityPlayer player, ItemStack held) {
+        FMLCommonHandler.instance().showGuiScreen(new GuiBuildingGadget(stack, stack != held));
     }
 
     @Override
     public void receiveControl(EntityPlayer player, ItemStack stack, NBTTagCompound nbt) {
-        getMode(stack).handler.clear(stack);
+        BuildingMode mode = getMode(stack);
+        if (mode.handler != null) {
+            getMode(stack).handler.clear(stack);
+        }
 
         if (nbt.hasKey("mode")) stack.stackTagCompound.setString("mode", nbt.getString("mode"));
         if (nbt.hasKey("block")) stack.stackTagCompound.setInteger("block", nbt.getInteger("block"));
@@ -211,8 +236,8 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     }
 
     // POWERRRRRR
-    private int capacity = 1_000_000;
-    private int consumption = 100;
+    private int capacity = 1_000_000; // 5 MHE
+    private int consumption = 20; // 100 HE
 
 
     /// FE ///
@@ -289,5 +314,40 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         return 0;
     }
     /// /HE ///
+
+    @Override
+    public boolean canEquip(ItemStack stack, EntityLivingBase entity) {
+        return true;
+    }
+
+    @Override
+    public boolean canUnequip(ItemStack stack, EntityLivingBase entity) {
+        return true;
+    }
+
+    @Override
+    public BaubleType getBaubleType(ItemStack stack) {
+        return null;
+    }
+
+    @Override
+    public void onEquipped(ItemStack stack, EntityLivingBase entity) {
+        
+    }
+
+    @Override
+    public void onUnequipped(ItemStack stack, EntityLivingBase entity) {
+        
+    }
+
+    @Override
+    public void onWornTick(ItemStack stack, EntityLivingBase entity) {
+        
+    }
+
+    @Override
+    public String[] getBaubleTypes(ItemStack stack) {
+        return new String[] { BaubleExpandedSlots.charmType };
+    }
 
 }

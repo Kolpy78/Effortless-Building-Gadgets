@@ -39,6 +39,7 @@ public class GuiBuildingGadget extends GuiScreen {
     private static RenderItem renderItem = new RenderItem();
 
     private ItemStack gadget;
+    private boolean itemless;
 
     private BuildingMode currentMode;
     private BlockMeta currentBlock;
@@ -60,6 +61,11 @@ public class GuiBuildingGadget extends GuiScreen {
 
     public GuiBuildingGadget(ItemStack stack) {
         this.gadget = stack;
+    }
+
+    public GuiBuildingGadget(ItemStack stack, boolean itemless) {
+        this(stack);
+        this.itemless = itemless;
     }
 
     @Override
@@ -135,7 +141,7 @@ public class GuiBuildingGadget extends GuiScreen {
 
         Tessellator tessellator = Tessellator.instance;
 
-        BuildingMode[] modes = BuildingMode.values();
+        BuildingMode[] modes = itemless ? BuildingMode.getItemlessModes() : BuildingMode.getRegularModes();
         BuildingAction[] actions = BuildingAction.getGlobalActions();
         BuildingOption[] options = currentMode.options;
 
@@ -213,27 +219,29 @@ public class GuiBuildingGadget extends GuiScreen {
         double blockXOffset = -(usableBlocks.size() * btnWidth + (usableBlocks.size() - 1) * padding) / 2;
         double blockYOffset = 70;
 
-        for (int i = 0; i < usableBlocks.size(); i++) {
-            BlockMeta block = usableBlocks.get(i);
-
-            double x1 = midX + i * btnWidth + i * padding + blockXOffset;
-            double x2 = x1 + btnWidth;
-            double y1 = midY + blockYOffset;
-            double y2 = y1 + btnWidth;
-
-            boolean isSelected = block.equals(currentBlock);
-            boolean isHighlighted = x1 <= mouseX && x2 >= mouseX && y1 <= mouseY && y2 >= mouseY;
-
-            if (isHighlighted) {
-                switchToBlock = block;
+        if (!itemless) {
+            for (int i = 0; i < usableBlocks.size(); i++) {
+                BlockMeta block = usableBlocks.get(i);
+    
+                double x1 = midX + i * btnWidth + i * padding + blockXOffset;
+                double x2 = x1 + btnWidth;
+                double y1 = midY + blockYOffset;
+                double y2 = y1 + btnWidth;
+    
+                boolean isSelected = block.equals(currentBlock);
+                boolean isHighlighted = x1 <= mouseX && x2 >= mouseX && y1 <= mouseY && y2 >= mouseY;
+    
+                if (isHighlighted) {
+                    switchToBlock = block;
+                }
+    
+                tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 170 : 80);
+                
+                tessellator.addVertex(x1, y1, 0);
+                tessellator.addVertex(x1, y2, 0);
+                tessellator.addVertex(x2, y2, 0);
+                tessellator.addVertex(x2, y1, 0);
             }
-
-            tessellator.setColorRGBA(0, 0, 0, isHighlighted ? 255 : isSelected ? 170 : 80);
-            
-            tessellator.addVertex(x1, y1, 0);
-            tessellator.addVertex(x1, y2, 0);
-            tessellator.addVertex(x2, y2, 0);
-            tessellator.addVertex(x2, y1, 0);
         }
 
 
@@ -348,39 +356,41 @@ public class GuiBuildingGadget extends GuiScreen {
 
 
         // Draw block selecting icons
-        GL11.glEnable(GL12.GL_RESCALE_NORMAL);
-        RenderHelper.enableGUIStandardItemLighting();
-
-        long thisMs = System.currentTimeMillis();
-        blockNameTimerMs -= thisMs - lastMs;
-        lastMs = thisMs;
-
-        for (int i = 0; i < usableBlocks.size(); i++) {
-            BlockMeta block = usableBlocks.get(i);
-            double x = midX + i * btnWidth + i * padding + blockXOffset;
-            double y = midY + blockYOffset;
-            renderItem.renderItemIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), new ItemStack(block.block, 1, block.meta), (int)x + 4, (int)y + 4);
-
-            if (switchToBlock != null ? block.equals(switchToBlock) : blockNameTimerMs > 0 && block.equals(currentBlock)) {
-                ItemStack stack = usableBlockStacks.get(i);
-                String text = I18n.format(stack.getItem().getUnlocalizedName(stack) + ".name");
+        if (!itemless) {
+            GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+            RenderHelper.enableGUIStandardItemLighting();
+    
+            long thisMs = System.currentTimeMillis();
+            blockNameTimerMs -= thisMs - lastMs;
+            lastMs = thisMs;
+    
+            for (int i = 0; i < usableBlocks.size(); i++) {
+                BlockMeta block = usableBlocks.get(i);
+                double x = midX + i * btnWidth + i * padding + blockXOffset;
+                double y = midY + blockYOffset;
+                renderItem.renderItemIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), new ItemStack(block.block, 1, block.meta), (int)x + 4, (int)y + 4);
+    
+                if (switchToBlock != null ? block.equals(switchToBlock) : blockNameTimerMs > 0 && block.equals(currentBlock)) {
+                    ItemStack stack = usableBlockStacks.get(i);
+                    String text = I18n.format(stack.getItem().getUnlocalizedName(stack) + ".name");
+                    int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
+                    int ty = (int) (midY + blockYOffset + btnWidth + 8);
+        
+                    drawString(fontRendererObj, text, tx, ty, 0xFFFFFFFF);
+                }
+            }
+    
+            RenderHelper.disableStandardItemLighting();
+            GL11.glDisable(GL12.GL_RESCALE_NORMAL);
+    
+            if (usableBlocks.isEmpty()) {
+                String text = I18n.format("buildingui.noblocks");
                 int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
                 int ty = (int) (midY + blockYOffset + btnWidth + 8);
     
-                drawString(fontRendererObj, text, tx, ty, 0xFFFFFFFF);
+                drawString(fontRendererObj, text, tx, ty, 0xFFAA0000);
+                GL11.glColor4d(1, 1, 1, 1);
             }
-        }
-
-        RenderHelper.disableStandardItemLighting();
-        GL11.glDisable(GL12.GL_RESCALE_NORMAL);
-
-        if (usableBlocks.isEmpty()) {
-            String text = I18n.format("buildingui.noblocks");
-            int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
-            int ty = (int) (midY + blockYOffset + btnWidth + 8);
-
-            drawString(fontRendererObj, text, tx, ty, 0xFFAA0000);
-            GL11.glColor4d(1, 1, 1, 1);
         }
 
 
@@ -487,7 +497,7 @@ public class GuiBuildingGadget extends GuiScreen {
     }
 
     private boolean switchBlock() {
-        if (switchToBlock != null) {
+        if (!itemless && switchToBlock != null) {
             NBTTagCompound data = new NBTTagCompound();
             data.setInteger("block", Block.getIdFromBlock(switchToBlock.block));
             data.setByte("meta", (byte)switchToBlock.meta);

@@ -6,6 +6,8 @@ buildingaction.cube_full.name=Filled
 buildingaction.cube_hollow.name=Hollow
 buildingaction.cube_skeleton.name=Skeleton
 
+buildingmode.none.name=Disabled
+buildingmode.none.desc=Disables gadget placing
 buildingmode.extended.name=Extended
 buildingmode.extended.desc=Regular block placing with extended reach
 buildingmode.air.name=Air

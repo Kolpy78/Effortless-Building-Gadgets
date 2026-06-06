@@ -1,5 +1,6 @@
 package net.mellow.effortless.buildmode;
 
+import java.util.Arrays;
 import java.util.Locale;
 
 import net.mellow.effortless.buildmode.modes.*;
@@ -7,6 +8,7 @@ import net.mellow.effortless.buildmode.modes.*;
 public class ModeOptions {
     
     public static enum BuildingMode {
+        NONE(null, 0, 16), // disabled
         EXTENDED(new Extended(), 16, 16), // greater reach
         AIR(new Air(), 240, 16), // air placement
         LINE(new Line(), 32, 16), // lines
@@ -32,6 +34,15 @@ public class ModeOptions {
 
         public String getUnlocalizedDesc() {
             return "buildingmode." + name().toLowerCase(Locale.ROOT) + ".desc";
+        }
+
+        public static BuildingMode[] getRegularModes() {
+            BuildingMode[] modes = BuildingMode.values();
+            return Arrays.copyOfRange(modes, 1, modes.length);
+        }
+
+        public static BuildingMode[] getItemlessModes() {
+            return BuildingMode.values();
         }
     }
 

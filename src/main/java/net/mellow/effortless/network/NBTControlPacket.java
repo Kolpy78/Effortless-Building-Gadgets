@@ -6,6 +6,7 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -48,7 +49,10 @@ public class NBTControlPacket implements IMessage {
             EntityPlayer player = ctx.getServerHandler().playerEntity;
 
             ItemStack held = player.getHeldItem();
-            if (held == null || !(held.getItem() instanceof IItemControlReceiver)) return null;
+            if (held == null || !(held.getItem() instanceof IItemControlReceiver)) {
+                held = CompatBaublesExpanded.getGadgetFromBaubles(player);
+                if (held == null) return null;
+            }
 
             try {
                 NBTTagCompound nbt = message.buffer.readNBTTagCompoundFromBuffer();

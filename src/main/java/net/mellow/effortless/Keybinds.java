@@ -9,10 +9,12 @@ import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.items.IItemGuiProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 
 public class Keybinds {
@@ -35,9 +37,18 @@ public class Keybinds {
 
         if (uiKey.getIsKeyPressed()) {
             EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+
             ItemStack held = player.getHeldItem();
-            if (held != null && held.getItem() instanceof IItemGuiProvider) {
-                ((IItemGuiProvider) held.getItem()).provideGui(held, player);
+            if (held != null) {
+                
+                if (held.getItem() instanceof IItemGuiProvider) {
+                    ((IItemGuiProvider) held.getItem()).provideGui(held, player, held);
+                } else if (held.getItem() instanceof ItemBlock) {
+                    ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
+                    if (gadget != null) {
+                        ((IItemGuiProvider) gadget.getItem()).provideGui(gadget, player, held);
+                    }
+                }
             }
         }
     }
