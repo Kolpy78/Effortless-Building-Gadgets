@@ -24,6 +24,7 @@ import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingMode;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.compat.Compat;
+import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.gui.GuiBuildingGadget;
 import net.mellow.effortless.network.IItemControlReceiver;
 import net.mellow.effortless.util.MathUtil;
@@ -229,6 +230,8 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
                 case "REDO": History.redo(player.worldObj, player); break;
             }
         }
+
+        CompatBaublesExpanded.syncBaubles(player);
     }
 
     // POWERRRRRR

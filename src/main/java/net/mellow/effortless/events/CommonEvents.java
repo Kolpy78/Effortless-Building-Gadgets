@@ -68,6 +68,8 @@ public class CommonEvents {
             event.useBlock = Result.DENY;
             event.useItem = Result.DENY;
         }
+
+        CompatBaublesExpanded.syncBaubles(event.entityPlayer);
     }
 
 }

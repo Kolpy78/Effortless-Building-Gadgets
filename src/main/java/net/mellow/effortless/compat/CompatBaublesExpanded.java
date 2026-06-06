@@ -2,6 +2,7 @@ package net.mellow.effortless.compat;
 
 import baubles.api.BaublesApi;
 import baubles.api.expanded.BaubleExpandedSlots;
+import baubles.common.event.EventHandlerNetwork;
 import net.mellow.effortless.items.ItemBuildingGadget;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -30,6 +31,11 @@ public class CompatBaublesExpanded {
             }
         }
         return null;
+    }
+
+    public static void syncBaubles(EntityPlayer player) {
+        if (!initialised) return;
+        EventHandlerNetwork.syncBaubles(player);
     }
 
 }
