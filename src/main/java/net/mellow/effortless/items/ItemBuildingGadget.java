@@ -120,6 +120,11 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         return false;
     }
 
+    @Override
+    public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float subX, float subY, float subZ) {
+        return false;
+    }
+
 
     @Override
     public boolean showDurabilityBar(ItemStack stack) {
