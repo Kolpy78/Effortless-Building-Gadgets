@@ -25,6 +25,7 @@ buildingmode.diagonal_wall.name=Diagonal Wall
 buildingmode.slope_floor.name=Sloped Floor
 buildingmode.circle.name=Circle
 buildingmode.cylinder.name=Cylinder
+buildingmode.sphere.name=Sphere
 
 buildingui.noblocks=No blocks in hotbar
 

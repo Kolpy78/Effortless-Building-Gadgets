@@ -14,6 +14,10 @@ Place blocks in all sorts of different shapes, automatically replacing any soft 
     * Both Filled and Hollow
 * Cubes
     * Filled, Hollow, and Skeletonised options available
+* Diagonal Lines + Walls
+* Sloped Floors
+* Circles + Cylinders
+* Spheres
 
 Will not function with any blocks that place with tile entities. (Some exceptions coming soon, as noted in planned features)
 
