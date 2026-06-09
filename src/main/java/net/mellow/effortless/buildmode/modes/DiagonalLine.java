@@ -32,6 +32,8 @@ public class DiagonalLine extends ThreeClicksBuildMode {
         BlockPos pos1 = Floor.findFloor(player, pos0, true);
         if (pos1 == null) return;
 
+        updateHighlight(BlockPos.min(pos0, pos1), BlockPos.max(pos0, pos1));
+
         Tessellator tess = Tessellator.instance;
         startLineDraw(tess, player, partialTicks);
 
@@ -46,6 +48,8 @@ public class DiagonalLine extends ThreeClicksBuildMode {
     public void render(ItemStack stack, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1, float partialTicks) {
         BlockPos pos2 = Cube.findHeight(player, pos1, true);
         if (pos2 == null) return;
+
+        updateHighlight(BlockPos.min(pos0, pos2), BlockPos.max(pos0, pos2));
 
         Tessellator tess = Tessellator.instance;
         startLineDraw(tess, player, partialTicks);

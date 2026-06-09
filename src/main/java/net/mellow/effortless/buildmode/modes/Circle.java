@@ -9,6 +9,7 @@ import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.buildmode.TwoClicksBuildMode;
 import net.mellow.effortless.items.ItemBuildingGadget;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -34,7 +35,22 @@ public class Circle extends TwoClicksBuildMode {
 
         BuildingAction start = ItemBuildingGadget.getAction(stack, BuildingOption.CIRCLE_START);
         BuildingAction fill = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
+        
+        if (start == BuildingAction.CIRCLE_START_CORNER) {
+            updateHighlight(BlockPos.min(from, to), BlockPos.max(from, to));
+        } else {
+            BlockPos min = BlockPos.min(from, to);
+            BlockPos max = BlockPos.max(from, to);
 
+            List<String> values = new ArrayList<>();
+            if (min.x != max.x) values.add("" + ((max.x - min.x + 1) * 2 - 1));
+            if (min.y != max.y) values.add("" + ((max.y - min.y + 1) * 2 - 1));
+            if (min.z != max.z) values.add("" + ((max.z - min.z + 1) * 2 - 1));
+
+            highlightTitle = !values.isEmpty() ? String.join("x", values) : "1";
+            Minecraft.getMinecraft().ingameGUI.remainingHighlightTicks = 40;
+        }
+        
         Tessellator tess = Tessellator.instance;
         startLineDraw(tess, player, partialTicks);
 

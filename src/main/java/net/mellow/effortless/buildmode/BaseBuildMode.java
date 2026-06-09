@@ -285,15 +285,7 @@ public abstract class BaseBuildMode {
         BlockPos min = BlockPos.min(from, to);
         BlockPos max = BlockPos.max(from, to);
 
-        if (addToHighlight) {
-            List<String> values = new ArrayList<>();
-            if (min.x != max.x) values.add("" + (max.x - min.x + 1));
-            if (min.y != max.y) values.add("" + (max.y - min.y + 1));
-            if (min.z != max.z) values.add("" + (max.z - min.z + 1));
-
-            highlightTitle = !values.isEmpty() ? String.join("x", values) : "1";
-            Minecraft.getMinecraft().ingameGUI.remainingHighlightTicks = 40;
-        }
+        if (addToHighlight) updateHighlight(min, max);
 
         Tessellator tess = Tessellator.instance;
         startLineDraw(tess, player, partialTicks);
@@ -301,6 +293,16 @@ public abstract class BaseBuildMode {
         drawBox(tess, min, max);
 
         endLineDraw(tess);
+    }
+
+    public static void updateHighlight(BlockPos min, BlockPos max) {
+        List<String> values = new ArrayList<>();
+        if (min.x != max.x) values.add("" + (max.x - min.x + 1));
+        if (min.y != max.y) values.add("" + (max.y - min.y + 1));
+        if (min.z != max.z) values.add("" + (max.z - min.z + 1));
+
+        highlightTitle = !values.isEmpty() ? String.join("x", values) : "1";
+        Minecraft.getMinecraft().ingameGUI.remainingHighlightTicks = 40;
     }
 
     public static void drawBox(Tessellator tess, BlockPos min, BlockPos max) {
