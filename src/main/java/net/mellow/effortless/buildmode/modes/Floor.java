@@ -34,11 +34,6 @@ public class Floor extends TwoClicksBuildMode {
     }
 
     @Override
-    public void clear(ItemStack stack) {
-        stack.stackTagCompound.removeTag("pos0");
-    }
-
-    @Override
     public void render(ItemStack stack, World world, EntityPlayer player, BlockPos from, float partialTicks) {
         BlockPos to = findFloor(player, from, true);
         if (to == null) return;

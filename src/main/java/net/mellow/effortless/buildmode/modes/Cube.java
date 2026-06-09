@@ -6,99 +6,65 @@ import java.util.List;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.Vec3;
-import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.mellow.effortless.buildmode.ThreeClicksBuildMode;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.items.ItemBuildingGadget;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
-public class Cube extends BaseBuildMode {
+public class Cube extends ThreeClicksBuildMode {
 
     @Override
-    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
-        BlockPos pos0 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
-        BlockPos pos1 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos1"));
+    public BlockPos addMid(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos pos0) {
+        return Floor.findFloor(player, pos0, true);
+    }
 
-        if (pos0 == null) {
-            pos0 = BlockPos.fromRaycastSide(mop);
-            if (pos0 == null) return 0;
+    @Override
+    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1, int placedMeta) {
+        BlockPos pos2 = findHeight(player, pos1, true);
+        if (pos2 == null) return 0;
 
-            int placedMeta = getFinalPlacedMeta(selected, world, player, pos0.x, pos0.y, pos0.z, mop.sideHit, new Vec3(mop.hitVec));
+        BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.CUBE_FILL);
 
-            stack.stackTagCompound.setInteger("placedMeta", placedMeta);
-            stack.stackTagCompound.setTag("pos0", pos0.save());
-        } else if (pos1 == null) {
-            pos1 = Floor.findFloor(player, pos0, true);
-            if (pos1 == null) return 0;
-
-            stack.stackTagCompound.setTag("pos1", pos1.save());
-        } else {
-            BlockPos pos2 = findHeight(player, pos1, true);
-            if (pos2 == null) return 0;
-
-            int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
-
-            clear(stack);
-
-            BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.CUBE_FILL);
-
-            if (pos0.x != pos2.x && pos0.y != pos2.y && pos0.z != pos2.z) {
-                if (fillMode == BuildingAction.CUBE_SKELETON) {
-                    return buildSkeletonCube(world, player, selected, placedMeta, pos0, pos2, false);
-                } else if (fillMode == BuildingAction.CUBE_HOLLOW) {
-                    return buildHollowCube(world, player, selected, placedMeta, pos0, pos2, false);
-                }
+        if (pos0.x != pos2.x && pos0.y != pos2.y && pos0.z != pos2.z) {
+            if (fillMode == BuildingAction.CUBE_SKELETON) {
+                return buildSkeletonCube(world, player, selected, placedMeta, pos0, pos2, false);
+            } else if (fillMode == BuildingAction.CUBE_HOLLOW) {
+                return buildHollowCube(world, player, selected, placedMeta, pos0, pos2, false);
             }
-            
-            return buildBox(world, player, selected, placedMeta, pos0, pos2, false);
         }
-
-        return 0;
+        
+        return buildBox(world, player, selected, placedMeta, pos0, pos2, false);
     }
 
     @Override
-    public void clear(ItemStack stack) {
-        stack.stackTagCompound.removeTag("pos0");
-        stack.stackTagCompound.removeTag("pos1");
+    public void render(ItemStack stack, World world, EntityPlayer player, BlockPos pos0, float partialTicks) {
+        BlockPos pos1 = Floor.findFloor(player, pos0, true);
+        if (pos1 == null) return;
+
+        renderBox(player, partialTicks, pos0, pos1, true);
     }
 
     @Override
-    public void render(ItemStack stack, World world, EntityPlayer player, float partialTicks) {
-        BlockPos pos0 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
-        BlockPos pos1 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos1"));
+    public void render(ItemStack stack, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1, float partialTicks) {
+        BlockPos pos2 = findHeight(player, pos1, true);
+        if (pos2 == null) return;
 
-        if (pos0 == null) {
-            MovingObjectPosition mop = BuildModes.getMop(player, reach(stack));
-            if (mop == null) return;
+        renderBox(player, partialTicks, pos0, pos2, true);
 
-            Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
-        } else if (pos1 == null) {
-            pos1 = Floor.findFloor(player, pos0, true);
-            if (pos1 == null) return;
+        BlockPos min = BlockPos.min(pos0, pos2);
+        BlockPos max = BlockPos.max(pos0, pos2);
+        
+        BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.CUBE_FILL);
+        if (fillMode != BuildingAction.CUBE_FULL && (max.x - min.x > 1 && max.y - min.y > 1 && max.z - min.z > 1)) {
+            renderBox(player, partialTicks, min.add(1, 1, 1), max.add(-1, -1, -1));
 
-            renderBox(player, partialTicks, pos0, pos1, true);
-        } else {
-            BlockPos pos2 = findHeight(player, pos1, true);
-            if (pos2 == null) return;
-
-            renderBox(player, partialTicks, pos0, pos2, true);
-
-            BlockPos min = BlockPos.min(pos0, pos2);
-            BlockPos max = BlockPos.max(pos0, pos2);
-            
-            BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.CUBE_FILL);
-            if (fillMode != BuildingAction.CUBE_FULL && (max.x - min.x > 1 && max.y - min.y > 1 && max.z - min.z > 1)) {
-                renderBox(player, partialTicks, min.add(1, 1, 1), max.add(-1, -1, -1));
-
-                if (fillMode == BuildingAction.CUBE_SKELETON) {
-                    drawInnerFaces(player, min, max, partialTicks);
-                }
+            if (fillMode == BuildingAction.CUBE_SKELETON) {
+                drawInnerFaces(player, min, max, partialTicks);
             }
         }
     }
