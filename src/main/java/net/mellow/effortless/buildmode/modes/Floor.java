@@ -8,6 +8,7 @@ import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.mellow.effortless.buildmode.TwoClicksBuildMode;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.items.ItemBuildingGadget;
@@ -23,14 +24,8 @@ public class Floor extends TwoClicksBuildMode {
         if (to == null) return 0;
         
         BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-
-        if (fillMode == BuildingAction.HOLLOW) {
-            if (from.x != to.x && from.z != to.z) {
-                return buildHollowFloor(world, player, selected, placedMeta, from, to, false);
-            }
-        }
-        
-        return buildBox(world, player, selected, placedMeta, from, to, false);
+        List<BlockPos> blocks = getFloorBlocks(from, to, fillMode == BuildingAction.FULL);
+        return build(world, player, selected, placedMeta, blocks, false);
     }
 
     @Override
@@ -38,18 +33,13 @@ public class Floor extends TwoClicksBuildMode {
         BlockPos to = findFloor(player, from, true);
         if (to == null) return;
         
-        renderBox(player, partialTicks, from, to, true);
-        
         BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-        if (fillMode == BuildingAction.HOLLOW && (Math.abs(from.x - to.x) > 1 && Math.abs(from.z - to.z) > 1)) {
-            BlockPos min = BlockPos.min(from, to);
-            BlockPos max = BlockPos.max(from, to);
-            
-            renderBox(player, partialTicks, min.add(1, 0, 1), max.add(-1, 0, -1));
-        }
+        List<BlockPos> blocks = getFloorBlocks(from, to, fillMode == BuildingAction.FULL);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
+
+        updateHighlight(from, to);
     }
 
-    
     public static BlockPos findFloor(EntityPlayer player, BlockPos firstPos, boolean skipRaytrace) {
         Vec3 look = BuildModes.getPlayerLookVec(player);
         Vec3 start = BuildModes.getPlayerPos(player);
@@ -72,6 +62,35 @@ public class Floor extends TwoClicksBuildMode {
         Criteria selected = criteriaList.get(0);
 
         return BlockPos.containing(selected.planeBound);
+    }
+
+    public static List<BlockPos> getFloorBlocks(BlockPos from, BlockPos to, boolean fill) {
+        BlockPos min = BlockPos.min(from, to);
+        BlockPos max = BlockPos.max(from, to);
+
+        List<BlockPos> list = new ArrayList<>();
+
+        if (fill) {
+            addFloorBlocks(list, min.x, max.x, min.y, min.z, max.z);
+        } else {
+            addHollowFloorBlocks(list, min.x, max.x, min.y, min.z, max.z);
+        }
+
+        return list;
+    }
+
+    public static void addFloorBlocks(List<BlockPos> list, int x1, int x2, int y, int z1, int z2) {
+        for (int x = x1; x <= x2; x++) {
+        for (int z = z1; z <= z2; z++)
+            list.add(new BlockPos(x, y, z));
+        }
+    }
+
+    public static void addHollowFloorBlocks(List<BlockPos> list, int x1, int x2, int y, int z1, int z2) {
+        Line.addXLineBlocks(list, x1, x2, y, z1);
+        Line.addXLineBlocks(list, x1, x2, y, z2);
+        Line.addZLineBlocks(list, z1, z2, x1, y);
+        Line.addZLineBlocks(list, z1, z2, x2, y);
     }
 
     static class Criteria {

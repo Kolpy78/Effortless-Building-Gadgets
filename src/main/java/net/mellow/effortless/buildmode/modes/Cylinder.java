@@ -8,8 +8,8 @@ import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.buildmode.ThreeClicksBuildMode;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.mellow.effortless.items.ItemBuildingGadget;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -39,21 +39,14 @@ public class Cylinder extends ThreeClicksBuildMode {
 
         BuildingAction start = ItemBuildingGadget.getAction(stack, BuildingOption.CIRCLE_START);
         BuildingAction fill = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
+        List<BlockPos> blocks = Circle.getCircleBlocks(pos0, pos1, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
         
         if (start == BuildingAction.CIRCLE_START_CORNER) {
-            updateHighlight(BlockPos.min(pos0, pos1), BlockPos.max(pos0, pos1));
+            updateHighlight(pos0, pos1);
         } else {
-            Circle.updateHighlightCentered(BlockPos.min(pos0, pos1), BlockPos.max(pos0, pos1));
+            Circle.updateHighlightCentered(pos0, pos1);
         }
-        
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : Circle.getCircleBlocks(pos0, pos1, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL)) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
     }
 
     @Override
@@ -63,21 +56,14 @@ public class Cylinder extends ThreeClicksBuildMode {
 
         BuildingAction start = ItemBuildingGadget.getAction(stack, BuildingOption.CIRCLE_START);
         BuildingAction fill = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
+        List<BlockPos> blocks = getCylinderBlocks(pos0, pos1, pos2, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
         
         if (start == BuildingAction.CIRCLE_START_CORNER) {
             updateHighlight(BlockPos.min(pos0, pos2), BlockPos.max(pos0, pos2));
         } else {
             Circle.updateHighlightCentered(BlockPos.min(pos0, pos2), BlockPos.max(pos0, pos2));
         }
-
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : getCylinderBlocks(pos0, pos1, pos2, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL)) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
     }
 
 	public static List<BlockPos> getCylinderBlocks(BlockPos from, BlockPos mid, BlockPos to, boolean fromCorner, boolean fill) {

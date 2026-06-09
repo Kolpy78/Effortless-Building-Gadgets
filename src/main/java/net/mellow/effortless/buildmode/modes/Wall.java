@@ -8,6 +8,7 @@ import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.mellow.effortless.buildmode.TwoClicksBuildMode;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.items.ItemBuildingGadget;
@@ -23,38 +24,21 @@ public class Wall extends TwoClicksBuildMode {
         if (to == null) return 0;
         
         BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-        
-        if (fillMode == BuildingAction.HOLLOW) {
-            if (from.x != to.x) {
-                return buildHollowWallZ(world, player, selected, placedMeta, from, to, false);
-            } else if (from.z != to.z) {
-                return buildHollowWallX(world, player, selected, placedMeta, from, to, false);
-            }
-        }
-        
-        return buildBox(world, player, selected, placedMeta, from, to, false);
+        List<BlockPos> blocks = getWallBlocks(from, to, fillMode == BuildingAction.FULL);
+        return build(world, player, selected, placedMeta, blocks, false);
     }
 
     @Override
     public void render(ItemStack stack, World world, EntityPlayer player, BlockPos from, float partialTicks) {
-        BlockPos to = findWall(player, from, true);;
+        BlockPos to = findWall(player, from, true);
         if (to == null) return;
         
-        renderBox(player, partialTicks, from, to, true);
-        
         BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-        if (fillMode == BuildingAction.HOLLOW && Math.abs(from.y - to.y) > 1) {
-            BlockPos min = BlockPos.min(from, to);
-            BlockPos max = BlockPos.max(from, to);
+        List<BlockPos> blocks = getWallBlocks(from, to, fillMode == BuildingAction.FULL);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
 
-            if (max.x - min.x > 1) {
-                renderBox(player, partialTicks, min.add(1, 1, 0), max.add(-1, -1, 0));
-            } else if (max.z - min.z > 1) {
-                renderBox(player, partialTicks, min.add(0, 1, 1), max.add(0, -1, -1));
-            }
-        }
+        updateHighlight(from, to);
     }
-    
 
     public static BlockPos findWall(EntityPlayer player, BlockPos firstPos, boolean skipRaytrace) {
         Vec3 look = BuildModes.getPlayerLookVec(player);
@@ -93,6 +77,57 @@ public class Wall extends TwoClicksBuildMode {
         }
 
         return BlockPos.containing(selected.planeBound);
+    }
+
+    public static List<BlockPos> getWallBlocks(BlockPos from, BlockPos to, boolean fill) {
+        BlockPos min = BlockPos.min(from, to);
+        BlockPos max = BlockPos.max(from, to);
+
+        List<BlockPos> list = new ArrayList<>();
+
+        if (min.x == max.x) {
+            if (fill) {
+                addXWallBlocks(list, min.x, min.y, max.y, min.z, max.z);
+            } else {
+                addXHollowWallBlocks(list, min.x, min.y, max.y, min.z, max.z);
+            }
+        } else {
+            if (fill) {
+                addZWallBlocks(list, min.x, max.x, min.y, max.y, min.z);
+            } else {
+                addZHollowWallBlocks(list, min.x, max.x, min.y, max.y, min.z);
+            }
+        }
+
+        return list;
+    }
+
+    public static void addXWallBlocks(List<BlockPos> list, int x, int y1, int y2, int z1, int z2) {
+        for (int z = z1; z <= z2; z++) {
+        for (int y = y1; y <= y2; y++)
+            list.add(new BlockPos(x, y, z));
+        }
+    }
+
+    public static void addZWallBlocks(List<BlockPos> list, int x1, int x2, int y1, int y2, int z) {
+        for (int x = x1; x <= x2; x++) {
+        for (int y = y1; y <= y2; y++)
+            list.add(new BlockPos(x, y, z));
+        }
+    }
+
+    public static void addXHollowWallBlocks(List<BlockPos> list, int x, int y1, int y2, int z1, int z2) {
+        Line.addZLineBlocks(list, z1, z2, x, y1);
+        Line.addZLineBlocks(list, z1, z2, x, y2);
+        Line.addYLineBlocks(list, y1, y2, x, z1);
+        Line.addYLineBlocks(list, y1, y2, x, z2);
+    }
+
+    public static void addZHollowWallBlocks(List<BlockPos> list, int x1, int x2, int y1, int y2, int z) {
+        Line.addXLineBlocks(list, x1, x2, y1, z);
+        Line.addXLineBlocks(list, x1, x2, y2, z);
+        Line.addYLineBlocks(list, y1, y2, x1, z);
+        Line.addYLineBlocks(list, y1, y2, x2, z);
     }
 
     static class Criteria {

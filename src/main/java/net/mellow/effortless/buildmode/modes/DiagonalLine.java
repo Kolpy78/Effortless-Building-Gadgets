@@ -7,7 +7,7 @@ import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.ThreeClicksBuildMode;
-import net.minecraft.client.renderer.Tessellator;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -32,16 +32,9 @@ public class DiagonalLine extends ThreeClicksBuildMode {
         BlockPos pos1 = Floor.findFloor(player, pos0, true);
         if (pos1 == null) return;
 
-        updateHighlight(BlockPos.min(pos0, pos1), BlockPos.max(pos0, pos1));
+        VoxelRenderer.renderBlocks(getDiagonalLineBlocks(pos0, pos1, 10), player, partialTicks);
 
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : getDiagonalLineBlocks(pos0, pos1, 10)) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
+        updateHighlight(pos0, pos1);
     }
 
     @Override
@@ -49,16 +42,9 @@ public class DiagonalLine extends ThreeClicksBuildMode {
         BlockPos pos2 = Cube.findHeight(player, pos1, true);
         if (pos2 == null) return;
 
-        updateHighlight(BlockPos.min(pos0, pos2), BlockPos.max(pos0, pos2));
+        VoxelRenderer.renderBlocks(getDiagonalLineBlocks(pos0, pos2, 10), player, partialTicks);
 
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : getDiagonalLineBlocks(pos0, pos2, 10)) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
+        updateHighlight(pos0, pos2);
     }
 
     //Add diagonal line from first to second

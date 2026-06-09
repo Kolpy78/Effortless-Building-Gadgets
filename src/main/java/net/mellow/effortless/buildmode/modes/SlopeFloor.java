@@ -6,10 +6,10 @@ import java.util.List;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.ThreeClicksBuildMode;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.items.ItemBuildingGadget;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -37,9 +37,9 @@ public class SlopeFloor extends ThreeClicksBuildMode {
         BlockPos pos1 = Floor.findFloor(player, pos0, true);
         if (pos1 == null) return;
 
-        updateHighlight(BlockPos.min(pos0, pos1), BlockPos.max(pos0, pos1));
-        
-        renderBox(player, partialTicks, pos0, pos1, true);
+        VoxelRenderer.renderBlocks(Floor.getFloorBlocks(pos0, pos1, true), player, partialTicks);
+
+        updateHighlight(pos0, pos1);
     }
 
     @Override
@@ -47,19 +47,11 @@ public class SlopeFloor extends ThreeClicksBuildMode {
         BlockPos pos2 = Cube.findHeight(player, pos1, true);
         if (pos2 == null) return;
 
-        updateHighlight(BlockPos.min(pos0, pos2), BlockPos.max(pos0, pos2));
-
         BuildingAction edge = ItemBuildingGadget.getAction(stack, BuildingOption.RAISED_EDGE);
         List<BlockPos> blocks = getSlopeFloorBlocks(pos0, pos1, pos2, edge == BuildingAction.SHORT_EDGE);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
 
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : blocks) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
+        updateHighlight(pos0, pos2);
     }
 
     //Add slope floor from first to second

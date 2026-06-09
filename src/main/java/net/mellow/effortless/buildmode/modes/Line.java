@@ -8,6 +8,7 @@ import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.mellow.effortless.buildmode.TwoClicksBuildMode;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -18,8 +19,9 @@ public class Line extends TwoClicksBuildMode {
     public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos from, int placedMeta) {
         BlockPos to = findLine(player, from, true);
         if (to == null) return 0;
-        
-        return buildBox(world, player, selected, placedMeta, from, to, false);
+
+        List<BlockPos> blocks = getLineBlocks(from, to);
+        return build(world, player, selected, placedMeta, blocks, false);
     }
 
     @Override
@@ -27,7 +29,10 @@ public class Line extends TwoClicksBuildMode {
         BlockPos to = findLine(player, from, true);
         if (to == null) return;
 
-        renderBox(player, partialTicks, from, to, true);
+        List<BlockPos> blocks = getLineBlocks(from, to);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
+
+        updateHighlight(from, to);
     }
 
 
@@ -79,6 +84,41 @@ public class Line extends TwoClicksBuildMode {
         }
 
         return BlockPos.containing(selected.lineBound);
+    }
+
+    public static List<BlockPos> getLineBlocks(BlockPos from, BlockPos to) {
+        BlockPos min = BlockPos.min(from, to);
+        BlockPos max = BlockPos.max(from, to);
+
+        List<BlockPos> list = new ArrayList<>();
+
+        if (min.x != max.x) {
+            addXLineBlocks(list, min.x, max.x, min.y, min.z);
+        } else if (min.y != max.y) {
+            addYLineBlocks(list, min.y, max.y, min.x, min.z);
+        } else {
+            addZLineBlocks(list, min.z, max.z, min.x, min.y);
+        }
+
+        return list;
+    }
+
+    public static void addXLineBlocks(List<BlockPos> list, int x1, int x2, int y, int z) {
+        for (int x = x1; x <= x2; x++) {
+            list.add(new BlockPos(x, y, z));
+        }
+    }
+
+    public static void addYLineBlocks(List<BlockPos> list, int y1, int y2, int x, int z) {
+        for (int y = y1; y <= y2; y++) {
+            list.add(new BlockPos(x, y, z));
+        }
+    }
+
+    public static void addZLineBlocks(List<BlockPos> list, int z1, int z2, int x, int y) {
+        for (int z = z1; z <= z2; z++) {
+            list.add(new BlockPos(x, y, z));
+        }
     }
 
     static class Criteria {

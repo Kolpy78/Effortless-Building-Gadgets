@@ -27,6 +27,11 @@ public abstract class TwoClicksBuildMode extends BaseBuildMode {
             stack.stackTagCompound.setTag("pos0", from.save());
             stack.stackTagCompound.setInteger("placedMeta", placedMeta);
         } else {
+            if (world.isRemote) {
+                clear(stack);
+                return 0;
+            }
+
             int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
             int built = add(stack, selected, world, player, from, placedMeta);
 

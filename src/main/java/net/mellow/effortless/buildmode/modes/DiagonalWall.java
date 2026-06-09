@@ -6,10 +6,10 @@ import java.util.List;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.ThreeClicksBuildMode;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.items.ItemBuildingGadget;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -27,9 +27,7 @@ public class DiagonalWall extends ThreeClicksBuildMode {
         if (pos2 == null) return 0;
 
         BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-        List<BlockPos> blocks = fillMode == BuildingAction.HOLLOW
-            ? getHollowDiagonalWallBlocks(pos0, pos1, pos2)
-            : getDiagonalWallBlocks(pos0, pos1, pos2);
+        List<BlockPos> blocks = getDiagonalWallBlocks(pos0, pos1, pos2, fillMode == BuildingAction.FULL);
 
         return build(world, player, selected, placedMeta, blocks, false);
     }
@@ -39,16 +37,9 @@ public class DiagonalWall extends ThreeClicksBuildMode {
         BlockPos pos1 = Floor.findFloor(player, pos0, true);
         if (pos1 == null) return;
 
-        updateHighlight(BlockPos.min(pos0, pos1), BlockPos.max(pos0, pos1));
+        VoxelRenderer.renderBlocks(DiagonalLine.getDiagonalLineBlocks(pos0, pos1, 1), player, partialTicks);
 
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : DiagonalLine.getDiagonalLineBlocks(pos0, pos1, 1)) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
+        updateHighlight(pos0, pos1);
     }
 
     @Override
@@ -56,25 +47,15 @@ public class DiagonalWall extends ThreeClicksBuildMode {
         BlockPos pos2 = Cube.findHeight(player, pos1, true);
         if (pos2 == null) return;
 
-        updateHighlight(BlockPos.min(pos0, pos2), BlockPos.max(pos0, pos2));
-
         BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-        List<BlockPos> blocks = fillMode == BuildingAction.HOLLOW
-            ? getHollowDiagonalWallBlocks(pos0, pos1, pos2)
-            : getDiagonalWallBlocks(pos0, pos1, pos2);
+        List<BlockPos> blocks = getDiagonalWallBlocks(pos0, pos1, pos2, fillMode == BuildingAction.FULL);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
 
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : blocks) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
+        updateHighlight(pos0, pos2);
     }
 
     //Add diagonal wall from first to second
-    public static List<BlockPos> getDiagonalWallBlocks(BlockPos from, BlockPos mid, BlockPos to) {
+    public static List<BlockPos> getDiagonalWallBlocks(BlockPos from, BlockPos mid, BlockPos to, boolean fill) {
         List<BlockPos> list = new ArrayList<>();
 
         //Get diagonal line blocks
@@ -83,35 +64,25 @@ public class DiagonalWall extends ThreeClicksBuildMode {
         int lowest = Math.min(from.y, to.y);
         int highest = Math.max(from.y, to.y);
 
-        //Copy diagonal line on y axis
-        for (int y = lowest; y <= highest; y++) {
-            for (BlockPos blockPos : diagonalLineBlocks) {
-                list.add(new BlockPos(blockPos.x, y, blockPos.z));
+        if (fill) {
+            //Copy diagonal line on y axis
+            for (int y = lowest; y <= highest; y++) {
+                for (BlockPos blockPos : diagonalLineBlocks) {
+                    list.add(new BlockPos(blockPos.x, y, blockPos.z));
+                }
             }
-        }
+        } else {
+            // Place bottom and top
+            for (BlockPos blockPos : diagonalLineBlocks) {
+                list.add(new BlockPos(blockPos.x, lowest, blockPos.z));
+                list.add(new BlockPos(blockPos.x, highest, blockPos.z));
+            }
 
-        return list;
-    }
-
-    public static List<BlockPos> getHollowDiagonalWallBlocks(BlockPos from, BlockPos mid, BlockPos to) {
-        List<BlockPos> list = new ArrayList<>();
-
-        //Get diagonal line blocks
-        List<BlockPos> diagonalLineBlocks = DiagonalLine.getDiagonalLineBlocks(from, mid, 1);
-
-        int lowest = Math.min(from.y, to.y);
-        int highest = Math.max(from.y, to.y);
-
-        // Place bottom and top
-        for (BlockPos blockPos : diagonalLineBlocks) {
-            list.add(new BlockPos(blockPos.x, lowest, blockPos.z));
-            list.add(new BlockPos(blockPos.x, highest, blockPos.z));
-        }
-
-        // Place caps
-        for (int y = lowest; y <= highest; y++) {
-            list.add(new BlockPos(from.x, y, from.z));
-            list.add(new BlockPos(to.x, y, to.z));
+            // Place caps
+            for (int y = lowest; y <= highest; y++) {
+                list.add(new BlockPos(from.x, y, from.z));
+                list.add(new BlockPos(to.x, y, to.z));
+            }
         }
 
         return list;

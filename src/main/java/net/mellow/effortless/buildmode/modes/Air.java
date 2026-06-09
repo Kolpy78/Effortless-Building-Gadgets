@@ -5,6 +5,7 @@ import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MathHelper;
@@ -22,6 +23,8 @@ public class Air extends BaseBuildMode {
 
     @Override
     public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+        if (world.isRemote) return 0;
+
         if (mop == null) return 0;
         if (mop.typeOfHit == MovingObjectType.MISS) {
             BlockPos pos = new BlockPos(mop.blockX, mop.blockY, mop.blockZ);
@@ -42,13 +45,14 @@ public class Air extends BaseBuildMode {
             }
 
             int placedMeta = getFinalPlacedMeta(selected, world, player, pos.x, pos.y, pos.z, facing.ordinal(), new Vec3(mop.hitVec));
-            return buildBox(world, player, selected, placedMeta, pos, pos, false);
+            
+            return build(world, player, selected, placedMeta, pos, false);
         } else {
             BlockPos pos = BlockPos.fromRaycastSide(mop);
             if (pos == null) return 0;
 
             int placedMeta = getFinalPlacedMeta(selected, world, player, pos.x, pos.y, pos.z, mop.sideHit, new Vec3(mop.hitVec));
-            return buildBox(world, player, selected, placedMeta, pos, pos, false);
+            return build(world, player, selected, placedMeta, pos, false);
         }
     }
 
@@ -64,11 +68,11 @@ public class Air extends BaseBuildMode {
 
         if (mop.typeOfHit == MovingObjectType.MISS) {
             BlockPos pos = new BlockPos(mop.blockX, mop.blockY, mop.blockZ);
-            renderBox(player, partialTicks, pos, pos);
+            VoxelRenderer.renderBlock(pos, player, partialTicks);
         } else {
             BlockPos pos = BlockPos.fromRaycastSide(mop);
             if (pos == null) return;
-            renderBox(player, partialTicks, pos, pos);
+            VoxelRenderer.renderBlock(pos, player, partialTicks);
         }
     }
     

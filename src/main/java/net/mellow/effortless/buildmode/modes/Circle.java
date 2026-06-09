@@ -8,9 +8,9 @@ import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.buildmode.TwoClicksBuildMode;
+import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.mellow.effortless.items.ItemBuildingGadget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -35,21 +35,15 @@ public class Circle extends TwoClicksBuildMode {
 
         BuildingAction start = ItemBuildingGadget.getAction(stack, BuildingOption.CIRCLE_START);
         BuildingAction fill = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
+
+        List<BlockPos> blocks = getCircleBlocks(from, to, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL);
+        VoxelRenderer.renderBlocks(blocks, player, partialTicks);
         
         if (start == BuildingAction.CIRCLE_START_CORNER) {
             updateHighlight(BlockPos.min(from, to), BlockPos.max(from, to));
         } else {
             updateHighlightCentered(BlockPos.min(from, to), BlockPos.max(from, to));
         }
-        
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
-
-        for (BlockPos pos : getCircleBlocks(from, to, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL)) {
-            drawFullBox(tess, pos, pos);
-        }
-
-        endLineDraw(tess);
     }
 
     public static List<BlockPos> getCircleBlocks(BlockPos from, BlockPos to, boolean fromCorner, boolean fill) {
@@ -111,7 +105,10 @@ public class Circle extends TwoClicksBuildMode {
         return radiusX * radiusZ / Math.sqrt(part1 + part2);
     }
 
-    public static void updateHighlightCentered(BlockPos min, BlockPos max) {
+    public static void updateHighlightCentered(BlockPos from, BlockPos to) {
+        BlockPos min = BlockPos.min(from, to);
+        BlockPos max = BlockPos.max(from, to);
+
         List<String> values = new ArrayList<>();
         if (min.x != max.x) values.add("" + ((max.x - min.x + 1) * 2 - 1));
         if (min.y != max.y) values.add("" + (max.y - min.y + 1));

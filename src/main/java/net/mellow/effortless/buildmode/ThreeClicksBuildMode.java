@@ -35,6 +35,11 @@ public abstract class ThreeClicksBuildMode extends BaseBuildMode {
 
             stack.stackTagCompound.setTag("pos1", pos1.save());
         } else {
+            if (world.isRemote) {
+                clear(stack);
+                return 0;
+            }
+
             int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
             int built = add(stack, selected, world, player, pos0, pos1, placedMeta);
 

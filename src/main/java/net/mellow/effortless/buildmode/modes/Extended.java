@@ -15,11 +15,13 @@ public class Extended extends BaseBuildMode {
 
     @Override
     public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+        if (world.isRemote) return 0;
+
         BlockPos pos = BlockPos.fromRaycastSide(mop);
         if (pos == null) return 0;
         
         int placedMeta = getFinalPlacedMeta(selected, world, player, pos.x, pos.y, pos.z, mop.sideHit, new Vec3(mop.hitVec));
-        return buildBox(world, player, selected, placedMeta, pos, pos, false);
+        return build(world, player, selected, placedMeta, pos, false);
     }
 
     @Override
