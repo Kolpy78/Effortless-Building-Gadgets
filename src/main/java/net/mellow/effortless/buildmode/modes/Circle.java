@@ -39,16 +39,7 @@ public class Circle extends TwoClicksBuildMode {
         if (start == BuildingAction.CIRCLE_START_CORNER) {
             updateHighlight(BlockPos.min(from, to), BlockPos.max(from, to));
         } else {
-            BlockPos min = BlockPos.min(from, to);
-            BlockPos max = BlockPos.max(from, to);
-
-            List<String> values = new ArrayList<>();
-            if (min.x != max.x) values.add("" + ((max.x - min.x + 1) * 2 - 1));
-            if (min.y != max.y) values.add("" + ((max.y - min.y + 1) * 2 - 1));
-            if (min.z != max.z) values.add("" + ((max.z - min.z + 1) * 2 - 1));
-
-            highlightTitle = !values.isEmpty() ? String.join("x", values) : "1";
-            Minecraft.getMinecraft().ingameGUI.remainingHighlightTicks = 40;
+            updateHighlightCentered(BlockPos.min(from, to), BlockPos.max(from, to));
         }
         
         Tessellator tess = Tessellator.instance;
@@ -118,6 +109,16 @@ public class Circle extends TwoClicksBuildMode {
         double part1 = radiusX * radiusX * Math.sin(theta) * Math.sin(theta);
         double part2 = radiusZ * radiusZ * Math.cos(theta) * Math.cos(theta);
         return radiusX * radiusZ / Math.sqrt(part1 + part2);
+    }
+
+    public static void updateHighlightCentered(BlockPos min, BlockPos max) {
+        List<String> values = new ArrayList<>();
+        if (min.x != max.x) values.add("" + ((max.x - min.x + 1) * 2 - 1));
+        if (min.y != max.y) values.add("" + (max.y - min.y + 1));
+        if (min.z != max.z) values.add("" + ((max.z - min.z + 1) * 2 - 1));
+
+        highlightTitle = !values.isEmpty() ? String.join("x", values) : "1";
+        Minecraft.getMinecraft().ingameGUI.remainingHighlightTicks = 40;
     }
     
 }

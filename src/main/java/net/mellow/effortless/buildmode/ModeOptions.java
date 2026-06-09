@@ -18,7 +18,8 @@ public class ModeOptions {
         DIAGONAL_LINE(new DiagonalLine(), 96, 16, 0x8f47de), // okay I think you get it now
         DIAGONAL_WALL(new DiagonalWall(), 112, 16, 0x8f47de, BuildingOption.FILL),
         SLOPE_FLOOR(new SlopeFloor(), 128, 16, 0x8f47de, BuildingOption.RAISED_EDGE),
-        CIRCLE(new Circle(), 144, 16, 0x4ac24d, BuildingOption.CIRCLE_START, BuildingOption.FILL);
+        CIRCLE(new Circle(), 144, 16, 0x4ac24d, BuildingOption.CIRCLE_START, BuildingOption.FILL),
+        CYLINDER(new Cylinder(), 160, 16, 0x4ac24d, BuildingOption.CIRCLE_START, BuildingOption.FILL);
 
         public final BaseBuildMode handler;
         public final int iconX;
