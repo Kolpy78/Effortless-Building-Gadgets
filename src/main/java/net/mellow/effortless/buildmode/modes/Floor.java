@@ -6,51 +6,31 @@ import java.util.List;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.Vec3;
-import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
+import net.mellow.effortless.buildmode.TwoClicksBuildMode;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.items.ItemBuildingGadget;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
-public class Floor extends BaseBuildMode {
+public class Floor extends TwoClicksBuildMode {
 
     @Override
-    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
-        BlockPos from = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
+    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos from, int placedMeta) {
+        BlockPos to = findFloor(player, from, true);
+        if (to == null) return 0;
+        
+        BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
 
-        if (from == null) {
-            from = BlockPos.fromRaycastSide(mop);
-            if (from == null) return 0;
-
-            int placedMeta = getFinalPlacedMeta(selected, world, player, from.x, from.y, from.z, mop.sideHit, new Vec3(mop.hitVec));
-
-            stack.stackTagCompound.setTag("pos0", from.save());
-            stack.stackTagCompound.setInteger("placedMeta", placedMeta);
-        } else {
-            BlockPos to = findFloor(player, from, true);
-            if (to == null) return 0;
-
-            int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
-
-            clear(stack);
-            
-            BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-
-            if (fillMode == BuildingAction.HOLLOW) {
-                if (from.x != to.x && from.z != to.z) {
-                    return buildHollowFloor(world, player, selected, placedMeta, from, to, false);
-                }
+        if (fillMode == BuildingAction.HOLLOW) {
+            if (from.x != to.x && from.z != to.z) {
+                return buildHollowFloor(world, player, selected, placedMeta, from, to, false);
             }
-            
-            return buildBox(world, player, selected, placedMeta, from, to, false);
         }
-
-        return 0;
+        
+        return buildBox(world, player, selected, placedMeta, from, to, false);
     }
 
     @Override
@@ -59,26 +39,18 @@ public class Floor extends BaseBuildMode {
     }
 
     @Override
-    public void render(ItemStack stack, World world, EntityPlayer player, float partialTicks) {
-        BlockPos from = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
-        if (from == null) {
-            MovingObjectPosition mop = BuildModes.getMop(player, reach(stack));
-            if (mop != null) {
-                Minecraft.getMinecraft().renderGlobal.drawSelectionBox(player, mop, 0, partialTicks);
-            }
-        } else {
-            BlockPos to = findFloor(player, from, true);;
-            if (to == null) return;
+    public void render(ItemStack stack, World world, EntityPlayer player, BlockPos from, float partialTicks) {
+        BlockPos to = findFloor(player, from, true);
+        if (to == null) return;
+        
+        renderBox(player, partialTicks, from, to, true);
+        
+        BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
+        if (fillMode == BuildingAction.HOLLOW && (Math.abs(from.x - to.x) > 1 && Math.abs(from.z - to.z) > 1)) {
+            BlockPos min = BlockPos.min(from, to);
+            BlockPos max = BlockPos.max(from, to);
             
-            renderBox(player, partialTicks, from, to, true);
-            
-            BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
-            if (fillMode == BuildingAction.HOLLOW && (Math.abs(from.x - to.x) > 1 && Math.abs(from.z - to.z) > 1)) {
-                BlockPos min = BlockPos.min(from, to);
-                BlockPos max = BlockPos.max(from, to);
-                
-                renderBox(player, partialTicks, min.add(1, 0, 1), max.add(-1, 0, -1));
-            }
+            renderBox(player, partialTicks, min.add(1, 0, 1), max.add(-1, 0, -1));
         }
     }
 
