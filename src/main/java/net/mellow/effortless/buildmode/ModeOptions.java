@@ -15,7 +15,8 @@ public class ModeOptions {
         WALL(new Wall(), 48, 16, BuildingOption.FILL), // walls
         FLOOR(new Floor(), 64, 16, BuildingOption.FILL), // floors
         CUBE(new Cube(), 80, 16, BuildingOption.CUBE_FILL), // miney crafta
-        DIAGONAL_LINE(new DiagonalLine(), 96, 16); // okay I think you get it now
+        DIAGONAL_LINE(new DiagonalLine(), 96, 16), // okay I think you get it now
+        DIAGONAL_WALL(new DiagonalWall(), 112, 16, BuildingOption.FILL);
 
         public final BaseBuildMode handler;
         public final int iconX;
