@@ -11,6 +11,7 @@ import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.History.HistoryBlock;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -294,6 +295,15 @@ public abstract class BaseBuildMode {
             Minecraft.getMinecraft().ingameGUI.remainingHighlightTicks = 40;
         }
 
+        Tessellator tess = Tessellator.instance;
+        startLineDraw(tess, player, partialTicks);
+
+        drawBox(tess, min, max);
+
+        endLineDraw(tess);
+    }
+
+    public static void drawBox(Tessellator tess, BlockPos min, BlockPos max) {
         double minX = min.x + 0.075;
         double maxX = max.x + 0.925;
         double minY = min.y + 0.075;
@@ -301,9 +311,63 @@ public abstract class BaseBuildMode {
         double minZ = min.z + 0.075;
         double maxZ = max.z + 0.925;
 
-        Tessellator tess = Tessellator.instance;
-        startLineDraw(tess, player, partialTicks);
+        drawBoxSides(tess, minX, maxX, minY, maxY, minZ, maxZ);
+    }
+
+    // renders a little funky but is a lot less visually distracting for lots of connected boxes
+    public static void drawFullBox(Tessellator tess, BlockPos min, BlockPos max) {
+        double minX = min.x;
+        double maxX = max.x + 1;
+        double minY = min.y;
+        double maxY = max.y + 1;
+        double minZ = min.z;
+        double maxZ = max.z + 1;
+
+        drawBoxSides(tess, minX, maxX, minY, maxY, minZ, maxZ);
+    }
+
+    public static void startLineDraw(Tessellator tess, EntityPlayer player, float partialTicks) {
+        double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
+        double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
+        double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
+
+        GL11.glPushMatrix();
+        GL11.glEnable(GL11.GL_BLEND);
+        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glColor3f(1F, 1F, 1F);
+        GL11.glLineWidth(2.0F);
+        GL11.glDepthMask(false);
         
+        tess.setTranslation(-dx, -dy, -dz);
+        tess.startDrawing(GL11.GL_LINES);
+        tess.setBrightness(240);
+        tess.setColorRGBA_F(1F, 1F, 1F, 1F);
+    }
+
+    public static void endLineDraw(Tessellator tess) {
+        tess.draw();
+        tess.setTranslation(0, 0, 0);
+        
+        GL11.glDepthMask(true);
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glPopMatrix();
+    }
+
+    public static String highlightTitle;
+    
+    public String getItemHighlight(ItemStack stack) {
+        if (highlightTitle == null) return null;
+
+        String title = highlightTitle;
+        highlightTitle = null;
+        return title;
+    }
+
+    private static void drawBoxSides(Tessellator tess, double minX, double maxX, double minY, double maxY, double minZ, double maxZ) {
         // top
         tess.addVertex(minX, maxY, minZ);
         tess.addVertex(minX, maxY, maxZ);
@@ -342,43 +406,6 @@ public abstract class BaseBuildMode {
 
         tess.addVertex(minX, minY, maxZ);
         tess.addVertex(minX, maxY, maxZ);
-
-        endLineDraw(tess);
-    }
-
-    public static void startLineDraw(Tessellator tess, EntityPlayer player, float partialTicks) {
-        double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
-        double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
-        double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
-
-        GL11.glPushMatrix();
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glColor3f(1F, 1F, 1F);
-        
-        tess.setTranslation(-dx, -dy, -dz);
-        tess.startDrawing(GL11.GL_LINES);
-        tess.setBrightness(240);
-        tess.setColorRGBA_F(1F, 1F, 1F, 1F);
-    }
-
-    public static void endLineDraw(Tessellator tess) {
-        tess.draw();
-        tess.setTranslation(0, 0, 0);
-        
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glPopMatrix();
-    }
-
-    public static String highlightTitle;
-    
-    public String getItemHighlight(ItemStack stack) {
-        if (highlightTitle == null) return null;
-
-        String title = highlightTitle;
-        highlightTitle = null;
-        return title;
     }
 
 }

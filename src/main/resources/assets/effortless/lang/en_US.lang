@@ -16,6 +16,7 @@ buildingmode.line.name=Line
 buildingmode.wall.name=Wall
 buildingmode.floor.name=Floor
 buildingmode.cube.name=Cube
+buildingmode.diagonal_line.name=Diagonal Line
 
 buildingui.noblocks=No blocks in hotbar
 
