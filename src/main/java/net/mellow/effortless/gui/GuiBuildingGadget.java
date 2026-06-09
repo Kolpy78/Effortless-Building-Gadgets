@@ -285,7 +285,7 @@ public class GuiBuildingGadget extends GuiScreen {
 
                 double x1 = midX + o * btnWidth + o * padding + optionXOffset;
                 double x2 = x1 + btnWidth;
-                double y1 = midY + i * btnWidth + i * 20 + optionYOffset;
+                double y1 = midY + i * btnWidth + i * padding + optionYOffset;
                 double y2 = y1 + btnWidth;
 
                 boolean isSelected = action == currentOptions.get(option);
@@ -423,7 +423,7 @@ public class GuiBuildingGadget extends GuiScreen {
                 BuildingAction action = option.actions[o];
 
                 double x = midX + o * btnWidth + o * padding + optionXOffset;
-                double y = midY + i * btnWidth + i * 20 + optionYOffset;
+                double y = midY + i * btnWidth + i * padding + optionYOffset;
 
                 mc.getTextureManager().bindTexture(buildIcons);
                 drawTexturedModalRect((int)(x + 4), (int)(y + 4), action.iconX, action.iconY, 16, 16);
