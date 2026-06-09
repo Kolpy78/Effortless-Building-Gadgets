@@ -16,7 +16,8 @@ public class ModeOptions {
         FLOOR(new Floor(), 64, 16, BuildingOption.FILL), // floors
         CUBE(new Cube(), 80, 16, BuildingOption.CUBE_FILL), // miney crafta
         DIAGONAL_LINE(new DiagonalLine(), 96, 16), // okay I think you get it now
-        DIAGONAL_WALL(new DiagonalWall(), 112, 16, BuildingOption.FILL);
+        DIAGONAL_WALL(new DiagonalWall(), 112, 16, BuildingOption.FILL),
+        SLOPE_FLOOR(new SlopeFloor(), 128, 16, BuildingOption.RAISED_EDGE);
 
         public final BaseBuildMode handler;
         public final int iconX;
@@ -57,7 +58,10 @@ public class ModeOptions {
 
         CUBE_FULL(64, 32),
         CUBE_HOLLOW(80, 32),
-        CUBE_SKELETON(96, 32);
+        CUBE_SKELETON(96, 32),
+
+        SHORT_EDGE(112, 32),
+        LONG_EDGE(128, 32);
 
         public final int iconX;
         public final int iconY;
@@ -85,7 +89,8 @@ public class ModeOptions {
 
     public static enum BuildingOption {
         FILL(BuildingAction.FULL, BuildingAction.HOLLOW),
-        CUBE_FILL(BuildingAction.CUBE_FULL, BuildingAction.CUBE_HOLLOW, BuildingAction.CUBE_SKELETON);
+        CUBE_FILL(BuildingAction.CUBE_FULL, BuildingAction.CUBE_HOLLOW, BuildingAction.CUBE_SKELETON),
+        RAISED_EDGE(BuildingAction.SHORT_EDGE, BuildingAction.LONG_EDGE);
 
         public final BuildingAction[] actions;
 

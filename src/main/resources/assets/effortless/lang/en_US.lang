@@ -5,6 +5,8 @@ buildingaction.hollow.name=Hollow
 buildingaction.cube_full.name=Filled
 buildingaction.cube_hollow.name=Hollow
 buildingaction.cube_skeleton.name=Skeleton
+buildingaction.short_edge.name=Short Edge
+buildingaction.long_edge.name=Long Edge
 
 buildingmode.none.name=Disabled
 buildingmode.none.desc=Disables gadget placing
@@ -18,6 +20,7 @@ buildingmode.floor.name=Floor
 buildingmode.cube.name=Cube
 buildingmode.diagonal_line.name=Diagonal Line
 buildingmode.diagonal_wall.name=Diagonal Wall
+buildingmode.slope_floor.name=Sloped Floor
 
 buildingui.noblocks=No blocks in hotbar
 
