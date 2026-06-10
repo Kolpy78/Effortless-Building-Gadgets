@@ -1,9 +1,15 @@
-# Effortless Builing Gadgets
-> Build impressive structures, all in survival!
+# Effortless Building Gadgets
+> Build impressive structures, all in Minecraft 1.7.10 survival!
 
-Hold left alt while holding the gadget to configure.
+Many mods provide great tools for quickly breaking blocks, but few provide ways to place them as quickly, and less still are balanced for survival gameplay. To this end, Effortless Building Gadgets was made (backporting Effortless Building from modern MC)!
 
-It is highly recommended that you play with [Baubles Expanded](https://github.com/GTNewHorizons/Baubles-Expanded) installed. With it present it can be placed in a charm slot, which will allow it to be used and configured while holding any placeable block in your hotbar!
+![A view of the radial menu used to configure the tool](/radial_menu.png?raw=true "A view of the radial menu used to configure the tool")
+
+This mod adds a gadget for building all sorts of shapes in just a few clicks. Hold `LEFT ALT` while holding the gadget to configure. Crafting recipes are automatically generated if GT or NTM is present, falling back to a vanilla default (with more compatibility coming soon).
+
+It is highly recommended that you play with [Baubles Expanded](https://github.com/GTNewHorizons/Baubles-Expanded) installed. With it present it can be placed in a charm slot, which will allow it to be used and configured while holding **any placeable block in your hotbar!**
+
+The mod is designed for survival gameplay (and was originally conceived to finally supplant the ever useful but limited Better Builders Wands in 1.7.10). Usage is tied to a gadget that consumes energy and must be crafted to be used, and blocks placed are correctly consumed from your inventory.
 
 ## Capabilities
 Place blocks in all sorts of different shapes, automatically replacing any soft blocks like grass or snow, shapes available include:
@@ -18,6 +24,9 @@ Place blocks in all sorts of different shapes, automatically replacing any soft 
 * Sloped Floors
 * Circles + Cylinders
 * Spheres
+
+You can also:
+* Undo + Redo up to 64 edits
 
 Will not function with any blocks that place with tile entities. (Some exceptions coming soon, as noted in planned features)
 
