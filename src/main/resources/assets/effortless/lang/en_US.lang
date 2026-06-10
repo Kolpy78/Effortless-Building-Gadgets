@@ -29,6 +29,9 @@ buildingmode.sphere.name=Sphere
 
 buildingui.noblocks=No blocks in hotbar
 
+effortless.key=Effortless Building Gadgets
+effortless.key.uiKey=Open Gadget UI
+
 energy.stored.rf=Energy: %s / %s RF
 energy.stored.he=Power: %s / %s HE
 
