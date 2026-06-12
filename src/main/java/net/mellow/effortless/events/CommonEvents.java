@@ -44,8 +44,6 @@ public class CommonEvents {
     // Intercept ItemBlock usage for creative mode + baubles
     @SubscribeEvent
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.world.isRemote) return;
-
         ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(event.entityPlayer);
         if (gadget == null) return;
         
@@ -57,9 +55,13 @@ public class CommonEvents {
         ItemBuildingGadget gadgetItem = (ItemBuildingGadget) gadget.getItem();
 
         if (event.action == Action.LEFT_CLICK_BLOCK) {
-            gadgetItem.onEntitySwing(event.entityLiving, gadget);
+            if (!event.world.isRemote) {
+                gadgetItem.onEntitySwing(event.entityLiving, gadget);
+            }
         } else {
-            gadgetItem.onItemRightClick(gadget, event.world, event.entityPlayer, held.copy());
+            if (!event.world.isRemote) {
+                gadgetItem.onItemRightClick(gadget, event.world, event.entityPlayer, held.copy());
+            }
 
             event.useBlock = Result.DENY;
             event.useItem = Result.DENY;

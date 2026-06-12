@@ -4,6 +4,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockPos implements Comparable<BlockPos> {
@@ -43,6 +44,12 @@ public class BlockPos implements Comparable<BlockPos> {
         if (mop == null || mop.typeOfHit != MovingObjectType.BLOCK) return null;
         ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
         return new BlockPos(mop.blockX + dir.offsetX, mop.blockY + dir.offsetY, mop.blockZ + dir.offsetZ);
+    }
+
+    public static BlockPos fromRaycastReplaceable(World world, MovingObjectPosition mop) {
+        if (mop == null || mop.typeOfHit != MovingObjectType.BLOCK) return null;
+        boolean replaceable = world.getBlock(mop.blockX, mop.blockY, mop.blockZ).isReplaceable(world, mop.blockX, mop.blockY, mop.blockZ);
+        return replaceable ? fromRaycast(mop) : fromRaycastSide(mop);
     }
 
     public static BlockPos containing(Vec3 vec) {

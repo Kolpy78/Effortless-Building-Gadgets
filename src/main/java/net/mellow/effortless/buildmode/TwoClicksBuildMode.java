@@ -19,7 +19,7 @@ public abstract class TwoClicksBuildMode extends BaseBuildMode {
         BlockPos from = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
 
         if (from == null) {
-            from = BlockPos.fromRaycastSide(mop);
+            from = BlockPos.fromRaycastReplaceable(world, mop);
             if (from == null) return 0;
 
             PlaceableStack place = PlaceableStack.getPlaceableStack(selected, world, player, from.x, from.y, from.z, mop.sideHit, new Vec3(mop.hitVec));

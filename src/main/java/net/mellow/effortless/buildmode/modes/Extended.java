@@ -17,7 +17,7 @@ public class Extended extends BaseBuildMode {
     public int add(ItemStack stack, ItemStack selected, World world, EntityPlayer player, MovingObjectPosition mop) {
         if (world.isRemote) return 0;
 
-        BlockPos pos = BlockPos.fromRaycastSide(mop);
+        BlockPos pos = BlockPos.fromRaycastReplaceable(world, mop);
         if (pos == null) return 0;
         
         PlaceableStack place = PlaceableStack.getPlaceableStack(selected, world, player, pos.x, pos.y, pos.z, mop.sideHit, new Vec3(mop.hitVec));

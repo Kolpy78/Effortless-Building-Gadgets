@@ -22,7 +22,7 @@ public abstract class ThreeClicksBuildMode extends BaseBuildMode {
         BlockPos pos1 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos1"));
 
         if (pos0 == null) {
-            pos0 = BlockPos.fromRaycastSide(mop);
+            pos0 = BlockPos.fromRaycastReplaceable(world, mop);
             if (pos0 == null) return 0;
 
             PlaceableStack place = PlaceableStack.getPlaceableStack(selected, world, player, pos0.x, pos0.y, pos0.z, mop.sideHit, new Vec3(mop.hitVec));

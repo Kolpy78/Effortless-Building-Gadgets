@@ -1,2 +1,8 @@
+## Changes
+* Players can now place on replaceable blocks like tall grass with the tool
+    * Air placement will place on top, as before, ensuring placement always occurs in air
+
 ## Fixes
-* Added Russian and Australian translations
+* Player loses blocks if redo is performed after placing blocks in the redo region
+* Any blocks with custom placement rules defined in their `ItemBlock` will fail to perform these placements
+* Et Futurum Requiem beds can be placed with the tool, which breaks them, now they are treated the same as vanilla beds
