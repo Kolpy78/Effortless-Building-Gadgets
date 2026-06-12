@@ -11,7 +11,6 @@ import org.lwjgl.opengl.GL12;
 
 import net.mellow.effortless.Effortless;
 import net.mellow.effortless.Keybinds;
-import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingMode;
@@ -77,9 +76,7 @@ public class GuiBuildingGadget extends GuiScreen {
         for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++) {
             ItemStack stack = player.inventory.getStackInSlot(i);
 
-            BlockMeta type = BlockMeta.fromStack(stack);
-            if (type == null) continue;
-
+            if (!PlaceableStack.isPlaceable(stack)) continue;
             if (isInStack(usableBlocks, stack)) continue;
 
             ItemStack usableStack = stack.copy();

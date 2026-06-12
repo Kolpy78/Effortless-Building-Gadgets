@@ -6,7 +6,7 @@ import cpw.mods.fml.common.eventhandler.Event.Result;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
-import net.mellow.effortless.blocks.BlockMeta;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.History;
 import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.items.ItemBuildingGadget;
@@ -50,8 +50,7 @@ public class CommonEvents {
         if (gadget == null) return;
         
         ItemStack held = event.entityPlayer.getHeldItem();
-        BlockMeta selected = BlockMeta.fromStack(held);
-        if (selected == null) return;
+        if (!PlaceableStack.isPlaceable(held)) return;
 
         if (ItemBuildingGadget.getMode(gadget).handler == null) return;
 

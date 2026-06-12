@@ -9,7 +9,7 @@ import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import net.mellow.effortless.blocks.BlockMeta;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.items.IItemGuiProvider;
 import net.minecraft.client.Minecraft;
@@ -43,9 +43,8 @@ public class Keybinds {
             if (held != null && held.getItem() instanceof IItemGuiProvider) {
                 ((IItemGuiProvider) held.getItem()).provideGui(held, player, held);
             } else if (held == null || held.getItem() instanceof ItemBlock) {
-                BlockMeta selected = BlockMeta.fromStack(held);
                 ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
-                if (gadget != null && (selected != null || held == null)) {
+                if (gadget != null && (held == null || PlaceableStack.isPlaceable(held))) {
                     ((IItemGuiProvider) gadget.getItem()).provideGui(gadget, player, held);
                 }
             }

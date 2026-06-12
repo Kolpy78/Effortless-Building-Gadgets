@@ -1,7 +1,7 @@
 package net.mellow.effortless.events;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import net.mellow.effortless.blocks.BlockMeta;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.items.ItemBuildingGadget;
@@ -32,9 +32,8 @@ public class ClientEvents {
         EntityPlayer player = mc.thePlayer;
         ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
         if (gadget == null) return;
-        
-        BlockMeta selected = BlockMeta.fromStack(player.getHeldItem());
-        if (selected == null) return;
+
+        if (!PlaceableStack.isPlaceable(player.getHeldItem())) return;
 
         mc.ingameGUI.highlightingItemStack = gadget;
     }

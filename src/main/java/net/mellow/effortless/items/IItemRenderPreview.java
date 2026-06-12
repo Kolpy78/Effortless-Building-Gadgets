@@ -3,7 +3,7 @@ package net.mellow.effortless.items;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import net.mellow.effortless.blocks.BlockMeta;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -37,9 +37,8 @@ public interface IItemRenderPreview {
                 if (held.getItem() instanceof IItemRenderPreview) {
                     ((IItemRenderPreview) held.getItem()).render(world, player, held, event.partialTicks);
                 } else if (held.getItem() instanceof ItemBlock) {
-                    BlockMeta selected = BlockMeta.fromStack(held);
                     ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
-                    if (gadget != null && selected != null) {
+                    if (gadget != null && PlaceableStack.isPlaceable(held)) {
                         ((IItemRenderPreview) gadget.getItem()).render(world, player, gadget, event.partialTicks);
                     }
                 }

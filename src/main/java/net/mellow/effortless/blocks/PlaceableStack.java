@@ -2,6 +2,7 @@ package net.mellow.effortless.blocks;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
+import net.minecraft.block.BlockBed;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -22,6 +23,22 @@ public class PlaceableStack {
 
     public PlaceableStack(ItemStack stack, Block block, int meta) {
         this(stack, new BlockMeta(block, meta));
+    }
+
+    // Checks if a picked item is actually usable by any gadget
+    public static boolean isPlaceable(ItemStack stack) {
+        if (stack == null || stack.stackSize <= 0 || !(stack.getItem() instanceof ItemBlock)) return false;
+
+        Block block = ((ItemBlock) stack.getItem()).field_150939_a;
+        int meta = stack.getItemDamage();
+
+        // Compat fixes
+        if (block instanceof BlockBed) return false; // EFR makes its own "ItemBLOCKBed" placement class which doesn't conform to the vanilla expectation of it not being a non-ItemBlock Item, guh
+        
+        // No TEs, with exceptions (yeah keep your hat on)
+        if (block.hasTileEntity(meta)) return false; // revisit with ArchitectureCraft (coming very soon)
+
+        return true;
     }
 
     public static PlaceableStack load(NBTTagCompound tag) {
