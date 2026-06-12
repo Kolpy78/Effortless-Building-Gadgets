@@ -45,7 +45,7 @@ public class Keybinds {
             } else if (held == null || held.getItem() instanceof ItemBlock) {
                 BlockMeta selected = BlockMeta.fromStack(held);
                 ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
-                if (gadget != null && (selected == null || !selected.block.hasTileEntity(selected.meta))) {
+                if (gadget != null && (selected != null || held == null)) {
                     ((IItemGuiProvider) gadget.getItem()).provideGui(gadget, player, held);
                 }
             }

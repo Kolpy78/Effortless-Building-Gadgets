@@ -8,8 +8,8 @@ import java.util.UUID;
 
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.util.FixedStack;
-import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -29,8 +29,8 @@ public class History {
         redoStacks.clear();
     }
 
-    public static void addUndo(EntityPlayer player, List<HistoryBlock> blocks, BlockMeta blockItem) {
-        History history = new History(blocks, blockItem);
+    public static void addUndo(EntityPlayer player, List<HistoryBlock> blocks, PlaceableStack placed) {
+        History history = new History(blocks, placed);
 
         if (!undoStacks.containsKey(player.getUniqueID())) {
             undoStacks.put(player.getUniqueID(), new FixedStack<>(new History[64]));
@@ -55,12 +55,12 @@ public class History {
             int y = step.pos.y;
             int z = step.pos.z;
 
-            Block block = world.getBlock(x, y, z);
-            int meta = world.getBlockMetadata(x, y, z);
+            BlockMeta current = new BlockMeta(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
 
-            if (!new BlockMeta(block, meta).equals(step.isNow)) continue;
+            if (!current.equals(step.isNow)) continue; // only undo blocks that haven't changed
+            if (current.equals(step.type)) continue; // only place blocks that aren't already the current type
 
-            redoBlocks.add(new HistoryBlock(new BlockMeta(block, meta), step.type, step.pos));
+            redoBlocks.add(new HistoryBlock(current, step.type, step.pos));
             world.setBlock(x, y, z, step.type.block, step.type.meta, 3);
             blocksReturned++;
         }
@@ -68,20 +68,20 @@ public class History {
         if (!player.capabilities.isCreativeMode) {
             while (blocksReturned > 0) {
                 // TODO: separate itemstacks by blocks if we add block randomisation
-                int size = Math.min(blocksReturned, 64);
-                ItemStack toReturn = new ItemStack(blockSet.blockItem.block, size, blockSet.blockItem.meta);
+                ItemStack toReturn = blockSet.placed.stack.copy();
+                toReturn.stackSize = Math.min(blocksReturned, toReturn.getMaxStackSize());
+                blocksReturned -= toReturn.stackSize;
                 player.inventory.addItemStackToInventory(toReturn);
-                blocksReturned -= size;
             }
         }
 
-        addRedo(player, redoBlocks, blockSet.blockItem);
+        addRedo(player, redoBlocks, blockSet.placed);
 
         return true;
     }
 
-    public static void addRedo(EntityPlayer player, List<HistoryBlock> blocks, BlockMeta blockItem) {
-        History history = new History(blocks, blockItem);
+    public static void addRedo(EntityPlayer player, List<HistoryBlock> blocks, PlaceableStack placed) {
+        History history = new History(blocks, placed);
 
         if (!redoStacks.containsKey(player.getUniqueID())) {
             redoStacks.put(player.getUniqueID(), new FixedStack<>(new History[64]));
@@ -102,7 +102,7 @@ public class History {
         
         ItemStack toDeplete = null;
         if (useItems) {
-            toDeplete = BaseBuildMode.getMatchingStack(player, blockSet.blockItem);
+            toDeplete = BaseBuildMode.getMatchingStack(player, blockSet.placed);
             if (toDeplete == null) return false;
         }
 
@@ -113,14 +113,14 @@ public class History {
             int y = step.pos.y;
             int z = step.pos.z;
 
-            Block block = world.getBlock(x, y, z);
-            int meta = world.getBlockMetadata(x, y, z);
+            BlockMeta current = new BlockMeta(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
 
-            if (!new BlockMeta(block, meta).equals(step.isNow)) continue;
+            if (!current.equals(step.isNow)) continue; // only redo blocks that haven't changed
+            if (current.equals(step.type)) continue; // only place blocks that aren't already the current type
             
             if (useItems) {
                 if (toDeplete == null || toDeplete.stackSize <= 0) {
-                    toDeplete = BaseBuildMode.getMatchingStack(player, blockSet.blockItem);
+                    toDeplete = BaseBuildMode.getMatchingStack(player, blockSet.placed);
 
                     if (toDeplete == null) {
                         break;
@@ -130,25 +130,25 @@ public class History {
                 toDeplete.stackSize--;
             }
 
-            undoBlocks.add(new HistoryBlock(new BlockMeta(block, meta), step.type, step.pos));
+            undoBlocks.add(new HistoryBlock(current, step.type, step.pos));
             world.setBlock(x, y, z, step.type.block, step.type.meta, 3);
         }
 
-        addUndo(player, undoBlocks, blockSet.blockItem);
+        addUndo(player, undoBlocks, blockSet.placed);
 
         BaseBuildMode.cleanInventory(player);
 
         return true;
     }
 
-    public History(List<HistoryBlock> blocks, BlockMeta blockItem) {
+    public History(List<HistoryBlock> blocks, PlaceableStack placed) {
         this.state = blocks.toArray(new HistoryBlock[blocks.size()]);
-        this.blockItem = blockItem;
+        this.placed = placed;
     }
 
     // gonna try to be somewhat efficient with memory usage here
     public final HistoryBlock[] state;
-    public final BlockMeta blockItem;
+    public final PlaceableStack placed;
     
     public static final class HistoryBlock {
 

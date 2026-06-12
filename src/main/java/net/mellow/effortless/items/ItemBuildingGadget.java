@@ -17,7 +17,6 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import cofh.api.energy.IEnergyContainerItem;
 import net.mellow.effortless.Keybinds;
-import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.mellow.effortless.buildmode.History;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
@@ -99,7 +98,7 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         return onItemRightClick(stack, world, player, getSelected(stack));
     }
 
-    public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player, BlockMeta selected) {
+    public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player, ItemStack selected) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
 
         BuildingMode mode = getMode(stack);
@@ -150,10 +149,10 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     }
 
 
-    public static BlockMeta getSelected(ItemStack stack) {
-        if (stack.stackTagCompound == null) return new BlockMeta(Blocks.stone, 0);
-        BlockMeta selected = new BlockMeta(stack.stackTagCompound.getInteger("block"), stack.stackTagCompound.getByte("meta"));
-        if (selected == null || selected.block == Blocks.air) selected = new BlockMeta(Blocks.stone, 0);
+    public static ItemStack getSelected(ItemStack stack) {
+        if (stack.stackTagCompound == null) return new ItemStack(Blocks.stone);
+        ItemStack selected = ItemStack.loadItemStackFromNBT(stack.stackTagCompound.getCompoundTag("selected"));
+        if (selected == null) selected = new ItemStack(Blocks.stone);
         return selected;
     }
 
@@ -215,7 +214,7 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         }
 
         if (nbt.hasKey("mode")) stack.stackTagCompound.setString("mode", nbt.getString("mode"));
-        if (nbt.hasKey("block")) stack.stackTagCompound.setInteger("block", nbt.getInteger("block"));
+        if (nbt.hasKey("selected")) stack.stackTagCompound.setTag("selected", nbt.getTag("selected"));
         if (nbt.hasKey("meta")) stack.stackTagCompound.setByte("meta", nbt.getByte("meta"));
 
         if (nbt.hasKey("option")) {
@@ -330,19 +329,13 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     }
 
     @Override
-    public void onEquipped(ItemStack stack, EntityLivingBase entity) {
-        
-    }
+    public void onEquipped(ItemStack stack, EntityLivingBase entity) {}
 
     @Override
-    public void onUnequipped(ItemStack stack, EntityLivingBase entity) {
-        
-    }
+    public void onUnequipped(ItemStack stack, EntityLivingBase entity) {}
 
     @Override
-    public void onWornTick(ItemStack stack, EntityLivingBase entity) {
-        
-    }
+    public void onWornTick(ItemStack stack, EntityLivingBase entity) {}
 
     @Override
     public String[] getBaubleTypes(ItemStack stack) {

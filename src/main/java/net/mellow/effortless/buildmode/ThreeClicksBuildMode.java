@@ -1,7 +1,7 @@
 package net.mellow.effortless.buildmode;
 
-import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.blocks.Vec3;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -11,13 +11,13 @@ import net.minecraft.world.World;
 
 public abstract class ThreeClicksBuildMode extends BaseBuildMode {
     
-    public abstract BlockPos addMid(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos pos0);
-    public abstract int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1, int placedMeta);
+    public abstract BlockPos addMid(ItemStack stack, World world, EntityPlayer player, BlockPos pos0);
+    public abstract int add(ItemStack stack, PlaceableStack selected, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1);
     public abstract void render(ItemStack stack, World world, EntityPlayer player, BlockPos pos0, float partialTicks);
     public abstract void render(ItemStack stack, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1, float partialTicks);
 
     @Override
-    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+    public int add(ItemStack stack, ItemStack selected, World world, EntityPlayer player, MovingObjectPosition mop) {
         BlockPos pos0 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos0"));
         BlockPos pos1 = BlockPos.load(stack.stackTagCompound.getCompoundTag("pos1"));
 
@@ -25,12 +25,12 @@ public abstract class ThreeClicksBuildMode extends BaseBuildMode {
             pos0 = BlockPos.fromRaycastSide(mop);
             if (pos0 == null) return 0;
 
-            int placedMeta = getFinalPlacedMeta(selected, world, player, pos0.x, pos0.y, pos0.z, mop.sideHit, new Vec3(mop.hitVec));
+            PlaceableStack place = PlaceableStack.getPlaceableStack(selected, world, player, pos0.x, pos0.y, pos0.z, mop.sideHit, new Vec3(mop.hitVec));
 
-            stack.stackTagCompound.setInteger("placedMeta", placedMeta);
             stack.stackTagCompound.setTag("pos0", pos0.save());
+            stack.stackTagCompound.setTag("place", place.save());
         } else if (pos1 == null) {
-            pos1 = addMid(stack, selected, world, player, pos0);
+            pos1 = addMid(stack, world, player, pos0);
             if (pos1 == null) return 0;
 
             stack.stackTagCompound.setTag("pos1", pos1.save());
@@ -40,8 +40,13 @@ public abstract class ThreeClicksBuildMode extends BaseBuildMode {
                 return 0;
             }
 
-            int placedMeta = stack.stackTagCompound.getInteger("placedMeta");
-            int built = add(stack, selected, world, player, pos0, pos1, placedMeta);
+            PlaceableStack place = PlaceableStack.load(stack.stackTagCompound.getCompoundTag("place"));
+            if (place == null) {
+                clear(stack);
+                return 0;
+            }
+
+            int built = add(stack, place, world, player, pos0, pos1);
 
             if (built <= 0) return 0;
 

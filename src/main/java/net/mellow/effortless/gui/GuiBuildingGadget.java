@@ -12,13 +12,13 @@ import org.lwjgl.opengl.GL12;
 import net.mellow.effortless.Effortless;
 import net.mellow.effortless.Keybinds;
 import net.mellow.effortless.blocks.BlockMeta;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingMode;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.items.ItemBuildingGadget;
 import net.mellow.effortless.network.NBTControlPacket;
 import net.mellow.effortless.network.NetworkHandler;
-import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiScreen;
@@ -42,15 +42,14 @@ public class GuiBuildingGadget extends GuiScreen {
     private boolean itemless;
 
     private BuildingMode currentMode;
-    private BlockMeta currentBlock;
+    private ItemStack currentBlock;
     private Map<BuildingOption, BuildingAction> currentOptions;
 
-    private List<BlockMeta> usableBlocks = new ArrayList<>();
-    private List<ItemStack> usableBlockStacks = new ArrayList<>(); // tiny bit clunky but hey this is almost certainly getting refactored once I realise a lot of block data is stored in itemstack NBT for some mods like architecturecraft... wait shit
+    private List<ItemStack> usableBlocks = new ArrayList<>();
 
     // For mouse click interactions
     private BuildingMode switchToMode = null;
-    private BlockMeta switchToBlock = null;
+    private ItemStack switchToBlock = null;
     private BuildingAction performAction = null;
 
     private BuildingOption switchToOptionName = null;
@@ -81,12 +80,20 @@ public class GuiBuildingGadget extends GuiScreen {
             BlockMeta type = BlockMeta.fromStack(stack);
             if (type == null) continue;
 
-            if (type.block.hasTileEntity(type.meta)) continue;
-            if (usableBlocks.contains(type)) continue;
+            if (isInStack(usableBlocks, stack)) continue;
 
-            usableBlocks.add(type);
-            usableBlockStacks.add(stack);
+            ItemStack usableStack = stack.copy();
+            usableStack.stackSize = 1;
+
+            usableBlocks.add(usableStack);
         }
+    }
+
+    private boolean isInStack(List<ItemStack> stacks, ItemStack stack) {
+        for (ItemStack usable : stacks) {
+            if (PlaceableStack.stackMatches(usable, stack)) return true;
+        }
+        return false;
     }
 
     @Override
@@ -237,7 +244,7 @@ public class GuiBuildingGadget extends GuiScreen {
 
         if (!itemless) {
             for (int i = 0; i < usableBlocks.size(); i++) {
-                BlockMeta block = usableBlocks.get(i);
+                ItemStack block = usableBlocks.get(i);
     
                 double x1 = midX + i * btnWidth + i * padding + blockXOffset;
                 double x2 = x1 + btnWidth;
@@ -381,14 +388,13 @@ public class GuiBuildingGadget extends GuiScreen {
             lastMs = thisMs;
     
             for (int i = 0; i < usableBlocks.size(); i++) {
-                BlockMeta block = usableBlocks.get(i);
+                ItemStack block = usableBlocks.get(i);
                 double x = midX + i * btnWidth + i * padding + blockXOffset;
                 double y = midY + blockYOffset;
-                renderItem.renderItemIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), new ItemStack(block.block, 1, block.meta), (int)x + 4, (int)y + 4);
+                renderItem.renderItemIntoGUI(this.fontRendererObj, this.mc.getTextureManager(), block, (int)x + 4, (int)y + 4);
     
                 if (switchToBlock != null ? block.equals(switchToBlock) : blockNameTimerMs > 0 && block.equals(currentBlock)) {
-                    ItemStack stack = usableBlockStacks.get(i);
-                    String text = I18n.format(stack.getItem().getUnlocalizedName(stack) + ".name");
+                    String text = I18n.format(block.getItem().getUnlocalizedName(block) + ".name");
                     int tx = (int) midX - fontRendererObj.getStringWidth(text) / 2;
                     int ty = (int) (midY + blockYOffset + btnWidth + 8);
         
@@ -515,8 +521,9 @@ public class GuiBuildingGadget extends GuiScreen {
     private boolean switchBlock() {
         if (!itemless && switchToBlock != null) {
             NBTTagCompound data = new NBTTagCompound();
-            data.setInteger("block", Block.getIdFromBlock(switchToBlock.block));
-            data.setByte("meta", (byte)switchToBlock.meta);
+            NBTTagCompound block = new NBTTagCompound();
+            switchToBlock.writeToNBT(block);
+            data.setTag("selected", block);
 
             NetworkHandler.instance.sendToServer(new NBTControlPacket(data));
             currentBlock = switchToBlock;

@@ -38,6 +38,7 @@ public class BlockMeta {
         if (stack == null || stack.stackSize <= 0 || !(stack.getItem() instanceof ItemBlock)) return null;
         BlockMeta selected = new BlockMeta(((ItemBlock) stack.getItem()).field_150939_a, stack.getItemDamage()); // don't transform yet
         if (selected.block instanceof BlockBed) return null; // EFR makes its own "ItemBLOCKBed" placement class which doesn't conform to the vanilla expectation of it not being a non-ItemBlock Item, guh
+        if (selected.block.hasTileEntity(selected.meta)) return null; // revisit with ArchitectureCraft (coming very soon)
         return selected;
     }
 

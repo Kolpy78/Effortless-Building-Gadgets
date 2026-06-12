@@ -3,8 +3,8 @@ package net.mellow.effortless.buildmode.modes;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingOption;
 import net.mellow.effortless.buildmode.TwoClicksBuildMode;
@@ -18,14 +18,14 @@ import net.minecraft.world.World;
 public class Circle extends TwoClicksBuildMode {
 
     @Override
-    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos from, int placedMeta) {
+    public int add(ItemStack stack, PlaceableStack selected, World world, EntityPlayer player, BlockPos from) {
         BlockPos to = Floor.findFloor(player, from, true);
         if (to == null) return 0;
 
         BuildingAction start = ItemBuildingGadget.getAction(stack, BuildingOption.CIRCLE_START);
         BuildingAction fill = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
 
-        return build(world, player, selected, placedMeta, getCircleBlocks(from, to, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL), false);
+        return build(world, player, selected, getCircleBlocks(from, to, start == BuildingAction.CIRCLE_START_CORNER, fill == BuildingAction.FULL), false);
     }
 
     @Override

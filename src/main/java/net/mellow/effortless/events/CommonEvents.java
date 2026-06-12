@@ -51,7 +51,7 @@ public class CommonEvents {
         
         ItemStack held = event.entityPlayer.getHeldItem();
         BlockMeta selected = BlockMeta.fromStack(held);
-        if (selected == null || selected.block.hasTileEntity(selected.meta)) return;
+        if (selected == null) return;
 
         if (ItemBuildingGadget.getMode(gadget).handler == null) return;
 
@@ -60,7 +60,7 @@ public class CommonEvents {
         if (event.action == Action.LEFT_CLICK_BLOCK) {
             gadgetItem.onEntitySwing(event.entityLiving, gadget);
         } else {
-            gadgetItem.onItemRightClick(gadget, event.world, event.entityPlayer, BlockMeta.fromStack(held));
+            gadgetItem.onItemRightClick(gadget, event.world, event.entityPlayer, held.copy());
 
             event.useBlock = Result.DENY;
             event.useItem = Result.DENY;

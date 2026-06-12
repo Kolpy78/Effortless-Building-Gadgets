@@ -3,8 +3,8 @@ package net.mellow.effortless.buildmode.modes;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.mellow.effortless.buildmode.TwoClicksBuildMode;
@@ -19,13 +19,13 @@ import net.minecraft.world.World;
 public class Wall extends TwoClicksBuildMode {
 
     @Override
-    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos from, int placedMeta) {
+    public int add(ItemStack stack, PlaceableStack selected, World world, EntityPlayer player, BlockPos from) {
         BlockPos to = findWall(player, from, true);
         if (to == null) return 0;
         
         BuildingAction fillMode = ItemBuildingGadget.getAction(stack, BuildingOption.FILL);
         List<BlockPos> blocks = getWallBlocks(from, to, fillMode == BuildingAction.FULL);
-        return build(world, player, selected, placedMeta, blocks, false);
+        return build(world, player, selected, blocks, false);
     }
 
     @Override

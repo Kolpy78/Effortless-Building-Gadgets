@@ -7,7 +7,6 @@ import net.mellow.effortless.compat.CompatBaublesExpanded;
 import net.mellow.effortless.items.ItemBuildingGadget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
@@ -34,11 +33,8 @@ public class ClientEvents {
         ItemStack gadget = CompatBaublesExpanded.getGadgetFromBaubles(player);
         if (gadget == null) return;
         
-        ItemStack held = player.getHeldItem();
-        if (held == null || !(held.getItem() instanceof ItemBlock)) return;
-
-        BlockMeta selected = BlockMeta.fromStack(held);
-        if (selected.block.hasTileEntity(selected.meta)) return;
+        BlockMeta selected = BlockMeta.fromStack(player.getHeldItem());
+        if (selected == null) return;
 
         mc.ingameGUI.highlightingItemStack = gadget;
     }

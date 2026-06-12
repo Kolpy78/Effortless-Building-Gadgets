@@ -1,7 +1,7 @@
 package net.mellow.effortless.buildmode.modes;
 
-import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.blocks.Vec3;
 import net.mellow.effortless.buildmode.BaseBuildMode;
 import net.mellow.effortless.buildmode.BuildModes;
@@ -14,14 +14,14 @@ import net.minecraft.world.World;
 public class Extended extends BaseBuildMode {
 
     @Override
-    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, MovingObjectPosition mop) {
+    public int add(ItemStack stack, ItemStack selected, World world, EntityPlayer player, MovingObjectPosition mop) {
         if (world.isRemote) return 0;
 
         BlockPos pos = BlockPos.fromRaycastSide(mop);
         if (pos == null) return 0;
         
-        int placedMeta = getFinalPlacedMeta(selected, world, player, pos.x, pos.y, pos.z, mop.sideHit, new Vec3(mop.hitVec));
-        return build(world, player, selected, placedMeta, pos, false);
+        PlaceableStack place = PlaceableStack.getPlaceableStack(selected, world, player, pos.x, pos.y, pos.z, mop.sideHit, new Vec3(mop.hitVec));
+        return build(world, player, place, pos, false);
     }
 
     @Override

@@ -3,8 +3,8 @@ package net.mellow.effortless.buildmode.modes;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
+import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.ThreeClicksBuildMode;
 import net.mellow.effortless.buildmode.VoxelRenderer;
 import net.mellow.effortless.buildmode.ModeOptions.BuildingAction;
@@ -17,19 +17,19 @@ import net.minecraft.world.World;
 public class SlopeFloor extends ThreeClicksBuildMode {
 
     @Override
-    public BlockPos addMid(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos pos0) {
+    public BlockPos addMid(ItemStack stack, World world, EntityPlayer player, BlockPos pos0) {
         return Floor.findFloor(player, pos0, true);
     }
 
     @Override
-    public int add(ItemStack stack, BlockMeta selected, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1, int placedMeta) {
+    public int add(ItemStack stack, PlaceableStack selected, World world, EntityPlayer player, BlockPos pos0, BlockPos pos1) {
         BlockPos pos2 = Cube.findHeight(player, pos1, true);
         if (pos2 == null) return 0;
 
         BuildingAction edge = ItemBuildingGadget.getAction(stack, BuildingOption.RAISED_EDGE);
         List<BlockPos> blocks = getSlopeFloorBlocks(pos0, pos1, pos2, edge == BuildingAction.SHORT_EDGE);
 
-        return build(world, player, selected, placedMeta, blocks, false);
+        return build(world, player, selected, blocks, false);
     }
 
     @Override
