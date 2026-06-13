@@ -25,8 +25,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import java.util.Collection;
 
 public class CompatAE2 {
-    public static boolean hasAE2 = Loader.isModLoaded(Compat.MODID_AE2);
-
+    public static boolean hasAE2 = Loader.isModLoaded("Applied Energistics 2");
     @Optional.Method(modid = Compat.MODID_AE2)
     public static IStorageGrid getNetwork(EntityPlayer player) {
         ItemStack stack = player.getHeldItem();
@@ -72,6 +71,7 @@ public class CompatAE2 {
         return foundStack;
     }
     //let us celebrate the fact this [method] for some reason works
+    @Optional.Method(modid = Compat.MODID_AE2)
     public static void removeFromNetwork(EntityPlayer player, PlaceableStack blockNeeded, long itemsToUse) {
         if (!canOperate(player, blockNeeded, itemsToUse)) return;
         IMEMonitor<IAEItemStack> inv = getInventory(player);
@@ -79,6 +79,7 @@ public class CompatAE2 {
         BaseActionSource src = new PlayerSource(player, null);
         inv.extractItems(toAEItemStack(blockNeeded.stack).setStackSize(itemsToUse), Actionable.MODULATE, src);
     }
+    @Optional.Method(modid = Compat.MODID_AE2)
     private static boolean canOperate(EntityPlayer player, PlaceableStack blockNeeded, long itemsToUse){
         BaseActionSource src = new PlayerSource(player, null);
         IMEMonitor<IAEItemStack> inv = getInventory(player);
@@ -88,9 +89,11 @@ public class CompatAE2 {
         if (itemList == null || itemList.isEmpty()) return false;
         return itemsNeeded.getStackSize() >= itemList.size();
     }
+    @Optional.Method(modid = Compat.MODID_AE2)
     private static IAEItemStack toAEItemStack(ItemStack stack) {
         return AEApi.instance().storage().createItemStack(stack);
     }
+    @Optional.Method(modid = Compat.MODID_AE2)
     private static ItemStack toItemStack(IAEItemStack itemStack) {
         return itemStack.getItemStack();
     }
@@ -99,10 +102,10 @@ public class CompatAE2 {
         if (sg == null) return null;
         return sg.getItemInventory();
     }
+    @Optional.Method(modid = Compat.MODID_AE2)
     public static IItemList<IAEItemStack> getItemList(EntityPlayer player){
         IMEMonitor<IAEItemStack> inventory = getInventory(player);
         if (inventory != null) return inventory.getStorageList();
         return null;
     }
-
 }
