@@ -28,14 +28,13 @@ Place blocks in all sorts of different shapes, automatically replacing any soft 
 You can also:
 * Undo + Redo up to 64 edits
 
-Will not function with any blocks that place with tile entities. (Some exceptions coming soon, as noted in planned features)
+Will not function with any blocks that place with tile entities, except for special decorative blocks (like ArchitectureCraft blocks)
 
 Requires power from:
 * **RF** (CoFH)
 * **HE** (NTM)
 
 ## Planned features
-* Support for ArchitectureCraft blocks
 * Cut/Copy/Paste gadgets (+rotation!)
 * (When in Bauble slot) use tools like pickaxes/shovels for shape breaking
 * Shape breaking blocks placed in session (or any, if in creative)
