@@ -16,6 +16,7 @@ import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import cofh.api.energy.IEnergyContainerItem;
+import net.mellow.effortless.Config;
 import net.mellow.effortless.Keybinds;
 import net.mellow.effortless.buildmode.BuildModes;
 import net.mellow.effortless.buildmode.History;
@@ -72,9 +73,11 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> list, boolean bool) {
-        EnumChatFormatting chargeFormat = getEnergyStored(stack) >= capacity / 10 ? EnumChatFormatting.BLUE : EnumChatFormatting.RED;
-        if (hasRF) list.add(chargeFormat + I18n.format("energy.stored.rf", MathUtil.getShortNumber(getEnergyStored(stack)), MathUtil.getShortNumber(getMaxEnergyStored(stack))));
-        if (hasHE) list.add(chargeFormat + I18n.format("energy.stored.he", MathUtil.getShortNumber(getCharge(stack)), MathUtil.getShortNumber(getMaxCharge(stack))));
+        if (Config.consumesEnergy) {
+            EnumChatFormatting chargeFormat = getEnergyStored(stack) >= Config.capacityRF / 10 ? EnumChatFormatting.BLUE : EnumChatFormatting.RED;
+            if (hasRF) list.add(chargeFormat + I18n.format("energy.stored.rf", MathUtil.getShortNumber(getEnergyStored(stack)), MathUtil.getShortNumber(getMaxEnergyStored(stack))));
+            if (hasHE) list.add(chargeFormat + I18n.format("energy.stored.he", MathUtil.getShortNumber(getCharge(stack)), MathUtil.getShortNumber(getMaxCharge(stack))));
+        }
         list.add(EnumChatFormatting.YELLOW + I18n.format("hint.uikey.usage", Keyboard.getKeyName(Keybinds.uiKey.getKeyCode())));
     }
 
@@ -106,18 +109,18 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
 
         MovingObjectPosition mop = BuildModes.getMop(player, mode.handler.reach(stack));
 
-        boolean requiresPower = !player.capabilities.isCreativeMode && (hasRF || hasHE);
+        boolean requiresPower = Config.consumesEnergy && !player.capabilities.isCreativeMode && (hasRF || hasHE);
         int energy = stack.stackTagCompound.getInteger("energy");
 
         if (requiresPower) {
             // require 10% charge to operate
-            if (energy < capacity / 10) return stack;
+            if (energy < Config.capacityRF / 10) return stack;
         }
 
         int blocksPlaced = mode.handler.add(stack, selected, world, player, mop);
 
         if (requiresPower) {
-            stack.stackTagCompound.setInteger("energy", Math.max(0, energy - blocksPlaced * consumption));
+            stack.stackTagCompound.setInteger("energy", Math.max(0, energy - blocksPlaced * Config.consumptionRF));
         }
 
         return stack;
@@ -140,7 +143,7 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
 
     @Override
     public boolean showDurabilityBar(ItemStack stack) {
-        return (hasRF || hasHE) && getEnergyStored(stack) < getMaxEnergyStored(stack);
+        return Config.consumesEnergy && (hasRF || hasHE) && getEnergyStored(stack) < getMaxEnergyStored(stack);
     }
 
     @Override
@@ -233,17 +236,13 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         CompatBaublesExpanded.syncBaubles(player);
     }
 
-    // POWERRRRRR
-    private int capacity = 1_000_000; // 5 MHE
-    private int consumption = 20; // 100 HE
-
 
     /// FE ///
     @Override
     public int receiveEnergy(ItemStack stack, int maxReceive, boolean simulate) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
         int energy = stack.stackTagCompound.getInteger("energy");
-        int energyReceived = Math.min(capacity - energy, maxReceive);
+        int energyReceived = Math.min(Config.capacityRF - energy, maxReceive);
 
         if (!simulate) {
             energy += energyReceived;
@@ -266,7 +265,7 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
 
     @Override
     public int getMaxEnergyStored(ItemStack stack) {
-        return capacity;
+        return Config.capacityRF;
     }
     /// /FE ///
 
@@ -276,14 +275,14 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     public void chargeBattery(ItemStack stack, long power) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
         int energy = stack.stackTagCompound.getInteger("energy");
-        energy += Math.max(1, (int) (power / 5));
+        energy += Math.max(1, Math.round(power / Config.conversionHEtoRF));
         stack.stackTagCompound.setInteger("energy", energy);
     }
 
     @Override
     public void setCharge(ItemStack stack, long power) {
         if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound();
-        stack.stackTagCompound.setInteger("energy", (int) (power / 5));
+        stack.stackTagCompound.setInteger("energy", Math.round(power / Config.conversionHEtoRF));
     }
 
     @Override
@@ -294,12 +293,12 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     @Override
     public long getCharge(ItemStack stack) {
         if (stack.stackTagCompound == null) return 0;
-        return stack.stackTagCompound.getInteger("energy") * 5;
+        return Math.round(stack.stackTagCompound.getInteger("energy") * Config.conversionHEtoRF);
     }
 
     @Override
     public long getMaxCharge(ItemStack stack) {
-        return capacity * 5;
+        return Math.round(Config.capacityRF * Config.conversionHEtoRF);
     }
 
     @Override
