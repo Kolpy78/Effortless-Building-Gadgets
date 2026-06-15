@@ -1,3 +1,7 @@
+## Added
+* ArchitectureCraft compatibility!
+    * Placed blocks will assume the orientation they would have if placed normally on the *first* click
+
 ## Changes
 * Players can now place on replaceable blocks like tall grass with the tool
     * Air placement will place on top, as before, ensuring placement always occurs in air

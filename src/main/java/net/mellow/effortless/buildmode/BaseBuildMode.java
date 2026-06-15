@@ -11,6 +11,7 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
@@ -66,7 +67,16 @@ public abstract class BaseBuildMode {
             }
 
             previousState.add(new HistoryBlock(new BlockMeta(block, meta), selected.place, new BlockPos(pos.x, pos.y, pos.z)));
-            world.setBlock(pos.x, pos.y, pos.z, selected.place.block, selected.place.meta, 3);
+            world.setBlock(pos.x, pos.y, pos.z, selected.place.block, selected.place.meta, 1);
+            if (selected.nbt != null) {
+                TileEntity tile = world.getTileEntity(pos.x, pos.y, pos.z);
+                selected.nbt.setInteger("x", pos.x);
+                selected.nbt.setInteger("y", pos.y);
+                selected.nbt.setInteger("z", pos.z);
+                tile.readFromNBT(selected.nbt);
+                tile.markDirty();
+            }
+            world.markBlockForUpdate(pos.x, pos.y, pos.z);
 
             blocksPlaced++;
         }
