@@ -1,6 +1,6 @@
 package net.mellow.effortless.blocks;
 
-import net.mellow.effortless.compat.CompatArchitectureCraft;
+import net.mellow.effortless.api.BlockRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
 import net.minecraft.block.BlockBed;
@@ -40,8 +40,8 @@ public class PlaceableStack {
         if (block instanceof BlockBed) return false; // EFR makes its own "ItemBLOCKBed" placement class which doesn't conform to the vanilla expectation of it not being a non-ItemBlock Item, guh
 
         // TE exceptions
-        if (block == CompatArchitectureCraft.SHAPE_BLOCK || block == CompatArchitectureCraft.GLOWING_SHAPE_BLOCK) return true;
-        
+        if (BlockRegistry.isWhitelisted(block)) return true;
+
         // No TEs (with exceptions)
         if (block.hasTileEntity(meta)) return false;
 

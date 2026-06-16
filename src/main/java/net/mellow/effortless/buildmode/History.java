@@ -12,6 +12,7 @@ import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.util.FixedStack;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
 public class History {
@@ -131,7 +132,16 @@ public class History {
             }
 
             undoBlocks.add(new HistoryBlock(current, step.type, step.pos));
-            world.setBlock(x, y, z, step.type.block, step.type.meta, 3);
+            world.setBlock(x, y, z, step.type.block, step.type.meta, 1);
+            if (blockSet.placed.nbt != null) {
+                TileEntity tile = world.getTileEntity(x, y, z);
+                blockSet.placed.nbt.setInteger("x", x);
+                blockSet.placed.nbt.setInteger("y", y);
+                blockSet.placed.nbt.setInteger("z", z);
+                tile.readFromNBT(blockSet.placed.nbt);
+                tile.markDirty();
+            }
+            world.markBlockForUpdate(x, y, z);
         }
 
         addUndo(player, undoBlocks, blockSet.placed);

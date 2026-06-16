@@ -42,4 +42,5 @@ dependencies {
 
     runtimeOnlyNonPublishable "curse.maven:baubles-expanded-gtnh-1238321:8131129"
     runtimeOnlyNonPublishable "curse.maven:architecturecraft-242001:2352554"
+    runtimeOnlyNonPublishable "curse.maven:carpenters-blocks-228932:2719376"
 }

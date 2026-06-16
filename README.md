@@ -28,7 +28,7 @@ Place blocks in all sorts of different shapes, automatically replacing any soft 
 You can also:
 * Undo + Redo up to 64 edits
 
-Will not function with any blocks that place with tile entities, except for special decorative blocks (like ArchitectureCraft blocks)
+Will not function with any blocks that place with tile entities, except for special decorative blocks (like ArchitectureCraft/Carpenter's blocks)
 
 Requires power from:
 * **RF** (CoFH)
