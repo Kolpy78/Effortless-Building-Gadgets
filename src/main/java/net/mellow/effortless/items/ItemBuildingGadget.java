@@ -78,6 +78,11 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
             if (hasRF) list.add(chargeFormat + I18n.format("energy.stored.rf", MathUtil.getShortNumber(getEnergyStored(stack)), MathUtil.getShortNumber(getMaxEnergyStored(stack))));
             if (hasHE) list.add(chargeFormat + I18n.format("energy.stored.he", MathUtil.getShortNumber(getCharge(stack)), MathUtil.getShortNumber(getMaxCharge(stack))));
         }
+
+        if (CompatBaublesExpanded.initialised) {
+            list.add(EnumChatFormatting.GRAY + I18n.format("item.building_gadget.bauble"));
+        }
+
         list.add(EnumChatFormatting.YELLOW + I18n.format("hint.uikey.usage", Keyboard.getKeyName(Keybinds.uiKey.getKeyCode())));
     }
 
