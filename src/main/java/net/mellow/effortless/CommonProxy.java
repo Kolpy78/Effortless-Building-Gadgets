@@ -35,6 +35,7 @@ public class CommonProxy {
     public void postInit(FMLPostInitializationEvent event) {
         // Register crafting recipe well after other mods have initialised their oredicts, for deep integration
         Crafting.register();
+        Compat.register();
         
         if (Loader.isModLoaded(Compat.MODID_BAUBLES)) CompatBaublesExpanded.postInit();
     }

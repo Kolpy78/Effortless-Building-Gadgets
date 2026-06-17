@@ -1,5 +1,6 @@
 package net.mellow.effortless.blocks;
 
+import net.mellow.effortless.api.BlockRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
 import net.minecraft.block.BlockBed;
@@ -7,6 +8,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
 public class PlaceableStack {
@@ -15,14 +17,16 @@ public class PlaceableStack {
     
     public final ItemStack stack;
     public final BlockMeta place;
+    public final NBTTagCompound nbt;
 
-    public PlaceableStack(ItemStack stack, BlockMeta place) {
+    public PlaceableStack(ItemStack stack, BlockMeta place, NBTTagCompound nbt) {
         this.stack = stack;
         this.place = place;
+        this.nbt = nbt;
     }
 
-    public PlaceableStack(ItemStack stack, Block block, int meta) {
-        this(stack, new BlockMeta(block, meta));
+    public PlaceableStack(ItemStack stack, Block block, int meta, NBTTagCompound nbt) {
+        this(stack, new BlockMeta(block, meta), nbt);
     }
 
     // Checks if a picked item is actually usable by any gadget
@@ -34,9 +38,12 @@ public class PlaceableStack {
 
         // Compat fixes
         if (block instanceof BlockBed) return false; // EFR makes its own "ItemBLOCKBed" placement class which doesn't conform to the vanilla expectation of it not being a non-ItemBlock Item, guh
-        
-        // No TEs, with exceptions (yeah keep your hat on)
-        if (block.hasTileEntity(meta)) return false; // revisit with ArchitectureCraft (coming very soon)
+
+        // TE exceptions
+        if (BlockRegistry.isWhitelisted(block)) return true;
+
+        // No TEs (with exceptions)
+        if (block.hasTileEntity(meta)) return false;
 
         return true;
     }
@@ -45,7 +52,8 @@ public class PlaceableStack {
         if (tag == null || !tag.hasKey("stack") || !tag.hasKey("block") || !tag.hasKey("meta")) return null;
         ItemStack stack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("stack"));
         BlockMeta place = new BlockMeta(tag.getInteger("block"), tag.getInteger("meta"));
-        return new PlaceableStack(stack, place);
+        NBTTagCompound nbt = tag.hasKey("nbt") ? tag.getCompoundTag("nbt") : null;
+        return new PlaceableStack(stack, place, nbt);
     }
 
     public NBTTagCompound save() {
@@ -55,6 +63,7 @@ public class PlaceableStack {
         tag.setTag("stack", stackTag);
         tag.setInteger("block", Block.getIdFromBlock(place.block));
         tag.setInteger("meta", place.meta);
+        if (nbt != null) tag.setTag("nbt", nbt);
         return tag;
     }
 
@@ -77,15 +86,27 @@ public class PlaceableStack {
         placingItem.field_150939_a.stepSound = SILENT_BLOCK;
         placingItem.onItemUse(selected, player, world, x, y, z, side, subX, subY, subZ);
 
-        // get meta (and TE for blocks with extended data... in a bit when I get to it)
+        // get meta (and TE for blocks with extended data)
         int meta = world.getBlockMetadata(x, y, z);
+        NBTTagCompound nbt = null;
+        if (placingItem.field_150939_a.hasTileEntity(meta)) {
+            TileEntity tile = world.getTileEntity(x, y, z);
+
+            if (tile != null) {
+                nbt = new NBTTagCompound();
+                tile.writeToNBT(nbt);
+                nbt.removeTag("x");
+                nbt.removeTag("y");
+                nbt.removeTag("z");
+            }
+        }
 
         // Reset back to whatever the state was before placement
         selected.stackSize = wasSize;
         placingItem.field_150939_a.stepSound = wasSound;
         world.setBlock(x, y, z, was.block, was.meta, 2);
 
-        PlaceableStack stack = new PlaceableStack(selected, placingItem.field_150939_a, meta);
+        PlaceableStack stack = new PlaceableStack(selected, placingItem.field_150939_a, meta, nbt);
 
         return stack;
     }
