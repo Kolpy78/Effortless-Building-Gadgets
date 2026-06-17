@@ -3,15 +3,12 @@ package net.mellow.effortless.buildmode;
 import java.util.ArrayList;
 import java.util.List;
 
-import appeng.api.storage.data.IAEItemStack;
-import appeng.api.storage.data.IItemList;
-import appeng.util.item.AEItemStack;
+import cpw.mods.fml.common.FMLLog;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.History.HistoryBlock;
 import net.mellow.effortless.compat.CompatAE2;
-import net.mellow.effortless.items.ItemBuildingGadget;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -60,19 +57,23 @@ public abstract class BaseBuildMode {
             if (!world.checkNoEntityCollision(bb, player)) continue;
 
             if (useItems) {
+                FMLLog.info("Use items reached!");
                 if (toDeplete == null || toDeplete.stackSize <= 0) {
+                    FMLLog.info("second check reached!");
                     toDeplete = getMatchingStack(player, selected);
                     if (toDeplete == null) {
                         break;
                     }
-                    if (CompatAE2.hasAE2){
-                        CompatAE2.removeFromNetwork(player, selected, toDeplete.stackSize);
-                        IItemList<IAEItemStack> itemList = CompatAE2.getItemList(player);
-                        if (itemList == null) break;
-                        if (itemList.isEmpty()) break;
-                    }
                 }
-
+                ItemStack stack = getMatchingStack(player, selected);
+                if (CompatAE2.hasAE2 && stack != null){
+                    int itemsLeft = stack.stackSize;
+                    if (itemsLeft >= 0) {
+                        FMLLog.info("ae2 ran");
+                        CompatAE2.removeFromNetwork(player, selected);
+                    }
+                    if (itemsLeft <=0) break;
+                }
                 toDeplete.stackSize--;
             }
 

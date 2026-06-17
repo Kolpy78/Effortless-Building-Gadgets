@@ -8,7 +8,6 @@ import appeng.api.features.IWirelessTermHandler;
 import appeng.api.util.AEColor;
 import appeng.api.util.IConfigManager;
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
-import cpw.mods.fml.common.FMLLog;
 import net.mellow.effortless.compat.CompatAE2;
 import org.lwjgl.input.Keyboard;
 
@@ -46,7 +45,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
-import static net.mellow.effortless.compat.CompatAE2.hasAE2;
+import static com.hbm.tileentity.machine.fusion.TileEntityFusionBreeder.capacity;
 
 @Optional.InterfaceList({
     @Optional.Interface(iface = "cofh.api.energy.IEnergyContainerItem", modid = Compat.MODID_COFH),
@@ -62,7 +61,6 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
 
     private static boolean hasRF;
     private static boolean hasHE;
-
 
     static {
         try {
@@ -94,16 +92,18 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         }
 
         list.add(EnumChatFormatting.YELLOW + I18n.format("hint.uikey.usage", Keyboard.getKeyName(Keybinds.uiKey.getKeyCode())));
-        if (hasAE2) {
+        if (CompatAE2.hasAE2){
             final String encKey = ItemStackNBT.getString(stack, "encryptionKey");
-            if(encKey == null || encKey.isEmpty()){
+            if (encKey == null || encKey.isEmpty()){
                 list.add(EnumChatFormatting.RED + I18n.format("status.unlinked"));
+            }else {
+                list.add(EnumChatFormatting.RED + I18n.format("status.linked"));
             }
-            else list.add(EnumChatFormatting.RED + I18n.format("status.linked"));
         }
     }
 
     public static boolean isRenderingOverlay = true;
+
     @Override
     public String getItemStackDisplayName(ItemStack stack) {
         if (isRenderingOverlay) {
@@ -360,12 +360,12 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
     public String[] getBaubleTypes(ItemStack stack) {
         return new String[] { BaubleExpandedSlots.charmType };
     }
-    @Optional.Method(modid = Compat.MODID_AE2)
+
     @Override
     public boolean canHandle(ItemStack is) {
         return true;
     }
-    @Optional.Method(modid = Compat.MODID_AE2)
+
     @Override
     public boolean usePower(EntityPlayer player, double amount, ItemStack is) {
         if (is.stackTagCompound == null) is.stackTagCompound = new NBTTagCompound();
@@ -377,23 +377,23 @@ public class ItemBuildingGadget extends ItemFlintAndSteel implements IItemRender
         }
         return false;
     }
-    @Optional.Method(modid = Compat.MODID_AE2)
+
     @Override
     public boolean hasPower(EntityPlayer player, double amount, ItemStack is) {
         int energy = is.stackTagCompound.getInteger("energy");
         return energy > capacity / 10;
     }
-    @Optional.Method(modid = Compat.MODID_AE2)
+
     @Override
     public IConfigManager getConfigManager(ItemStack is) {
         return null;
     }
-    @Optional.Method(modid = Compat.MODID_AE2)
+
     @Override
     public String getEncryptionKey(ItemStack item) {
         return ItemStackNBT.getString(item, "encryptionKey");
     }
-    @Optional.Method(modid = Compat.MODID_AE2)
+
     @Override
     public void setEncryptionKey(ItemStack item, String encKey, String name) {
         final NBTTagCompound data = ItemStackNBT.get(item);
