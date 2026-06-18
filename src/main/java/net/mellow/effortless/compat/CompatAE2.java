@@ -57,7 +57,9 @@ public class CompatAE2 {
         IAEItemStack itemsNeeded = inv.extractItems(toAEItemStack(blockNeeded.stack).setStackSize(itemsToUse), Actionable.SIMULATE, src);
         IItemList<IAEItemStack> itemList = getItemList(player);
         if (itemList == null || itemList.isEmpty()) return false;
-        return itemsNeeded.getStackSize() >= itemList.size();
+        ItemStack itemStack = findItemInNetwork(blockNeeded, player);
+        if (itemStack == null) return false;
+        return itemsNeeded.getStackSize() <= itemStack.stackSize;
     }
     private static IStorageGrid getStorageFromTerminal(EntityPlayer player) {
         WirelessTerminalGuiObject wt = getTerminalGuiObject(player);
