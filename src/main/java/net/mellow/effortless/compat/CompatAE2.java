@@ -28,7 +28,51 @@ import net.minecraftforge.common.util.ForgeDirection;
 import java.util.Collection;
 
 public class CompatAE2 {
+    @Optional.Method(modid = Compat.MODID_AE2)
+    public static ItemStack findItemInNetwork(PlaceableStack selected, EntityPlayer player) {
+        IAEItemStack targetStack = toAEItemStack(selected.stack);
+        if (targetStack == null) return null;
+        IItemList<IAEItemStack> itemList = getItemList(player);
+        if (itemList == null) return null;
+        Collection<IAEItemStack> matchingStack = itemList.findFuzzy(targetStack, FuzzyMode.IGNORE_ALL);
+        if (matchingStack == null || matchingStack.isEmpty()) return null;
+        IAEItemStack AE2foundItem = matchingStack.iterator().next();
+        ItemStack foundStack = toItemStack(AE2foundItem);
+        if (!PlaceableStack.stackMatches(foundStack, selected.stack)) return null;
+        return foundStack;
+    }
 
+    public static void removeFromNetwork(EntityPlayer player, PlaceableStack blockNeeded) {
+        int itemsToUse = 1;
+        if (!canOperate(player, blockNeeded, itemsToUse)) return;
+        IMEMonitor<IAEItemStack> inv = getInventory(player);
+        if (inv == null) return;
+        BaseActionSource src = new PlayerSource(player, null);
+        inv.extractItems(toAEItemStack(blockNeeded.stack).setStackSize(itemsToUse), Actionable.MODULATE, src);
+    }
+    public static boolean canOperate(EntityPlayer player, PlaceableStack blockNeeded, long itemsToUse){
+        BaseActionSource src = new PlayerSource(player, null);
+        IMEMonitor<IAEItemStack> inv = getInventory(player);
+        if (inv == null) return false;
+        IAEItemStack itemsNeeded = inv.extractItems(toAEItemStack(blockNeeded.stack).setStackSize(itemsToUse), Actionable.SIMULATE, src);
+        IItemList<IAEItemStack> itemList = getItemList(player);
+        if (itemList == null || itemList.isEmpty()) return false;
+        return itemsNeeded.getStackSize() >= itemList.size();
+    }
+    private static IStorageGrid getStorageFromTerminal(EntityPlayer player) {
+        WirelessTerminalGuiObject wt = getTerminalGuiObject(player);
+        if (wt != null) {
+            final IGridNode node = wt.getGridNode(ForgeDirection.UNKNOWN);
+            if (node == null) return null;
+            IGrid targetGrid;
+            targetGrid = node.getGrid();
+            if (targetGrid == null) return null;
+            IStorageGrid sg;
+            sg = targetGrid.getCache(IStorageGrid.class);
+            return sg;
+        }
+        return null;
+    }
     @Optional.Method(modid = Compat.MODID_AE2)
     public static WirelessTerminalGuiObject getTerminalGuiObject(EntityPlayer player) {
         for (int i = 0; i < player.inventory.getSizeInventory(); i++) {
@@ -40,19 +84,6 @@ public class CompatAE2 {
         }
         if (Loader.isModLoaded(Compat.MODID_BAUBLES)) {
             return readBaubles(player);
-        }
-        return null;
-    }
-    @Optional.Method(modid = Compat.MODID_BAUBLES)
-    public static WirelessTerminalGuiObject readBaubles(EntityPlayer player) {
-        for (int i = 0; i < BaublesApi.getBaubles(player).getSizeInventory(); i++) {
-            ItemStack item = BaublesApi.getBaubles(player).getStackInSlot(i);
-            if (item == null) continue;
-            if (item.getItem() instanceof IWirelessTermHandler t) {
-                if (t.canHandle(item)) {
-                    return getTerminalGuiObject(item, player, i, 1);
-                }
-            }
         }
         return null;
     }
@@ -72,59 +103,24 @@ public class CompatAE2 {
         if (!handler.hasPower(player, 1000F, item)) return null;
         return new WirelessTerminalGuiObject(wt, item, player, player.worldObj, x, y, Integer.MIN_VALUE);
     }
-    @Optional.Method(modid = Compat.MODID_AE2)
-    public static ItemStack findItemInNetwork(PlaceableStack selected, EntityPlayer player) {
-        IAEItemStack targetStack = toAEItemStack(selected.stack);
-        if (targetStack == null) return null;
-        IItemList<IAEItemStack> itemList = getItemList(player);
-        if (itemList == null) return null;
-        Collection<IAEItemStack> matchingStack = itemList.findFuzzy(targetStack, FuzzyMode.IGNORE_ALL);
-        if (matchingStack == null || matchingStack.isEmpty()) return null;
-        IAEItemStack AE2foundItem = matchingStack.iterator().next();
-        ItemStack foundStack = toItemStack(AE2foundItem);
-        if (!PlaceableStack.stackMatches(foundStack, selected.stack)) return null;
-        return foundStack;
-    }
-    /*
-    one is hardcoded because it was the easier thing to do and I don't think mellow will change the building for loop
-    anytime soon
-     */
-    public static void removeFromNetwork(EntityPlayer player, PlaceableStack blockNeeded) {
-        int itemsToUse = 1;
-        if (!canOperate(player, blockNeeded, itemsToUse)) return;
-        IMEMonitor<IAEItemStack> inv = getInventory(player);
-        if (inv == null) return;
-        BaseActionSource src = new PlayerSource(player, null);
-        inv.extractItems(toAEItemStack(blockNeeded.stack).setStackSize(itemsToUse), Actionable.MODULATE, src);
-    }
-    public static boolean canOperate(EntityPlayer player, PlaceableStack blockNeeded, long itemsToUse){
-        BaseActionSource src = new PlayerSource(player, null);
-        IMEMonitor<IAEItemStack> inv = getInventory(player);
-        if (inv == null) return false;
-        IAEItemStack itemsNeeded = inv.extractItems(toAEItemStack(blockNeeded.stack).setStackSize(itemsToUse), Actionable.SIMULATE, src);
-        IItemList<IAEItemStack> itemList = getItemList(player);
-        if (itemList == null || itemList.isEmpty()) return false;
-        return itemsNeeded.getStackSize() >= itemList.size();
+    @Optional.Method(modid = Compat.MODID_BAUBLES)
+    public static WirelessTerminalGuiObject readBaubles(EntityPlayer player) {
+        for (int i = 0; i < BaublesApi.getBaubles(player).getSizeInventory(); i++) {
+            ItemStack item = BaublesApi.getBaubles(player).getStackInSlot(i);
+            if (item == null) continue;
+            if (item.getItem() instanceof IWirelessTermHandler t) {
+                if (t.canHandle(item)) {
+                    return getTerminalGuiObject(item, player, i, 1);
+                }
+            }
+        }
+        return null;
     }
     private static IAEItemStack toAEItemStack(ItemStack stack) {
         return AEApi.instance().storage().createItemStack(stack);
     }
     private static ItemStack toItemStack(IAEItemStack itemStack) {
         return itemStack.getItemStack();
-    }
-    private static IStorageGrid getStorageFromTerminal(EntityPlayer player) {
-        WirelessTerminalGuiObject wt = getTerminalGuiObject(player);
-        if (wt != null) {
-            final IGridNode node = wt.getGridNode(ForgeDirection.UNKNOWN);
-            if (node == null) return null;
-            IGrid targetGrid;
-            targetGrid = node.getGrid();
-            if (targetGrid == null) return null;
-            IStorageGrid sg;
-            sg = targetGrid.getCache(IStorageGrid.class);
-            return sg;
-        }
-        return null;
     }
     private static IMEMonitor<IAEItemStack> getInventory(EntityPlayer player){
         IStorageGrid sg = getStorageFromTerminal(player);
