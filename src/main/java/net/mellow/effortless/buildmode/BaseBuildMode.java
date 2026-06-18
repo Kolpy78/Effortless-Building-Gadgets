@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cpw.mods.fml.common.FMLLog;
+import cpw.mods.fml.common.Loader;
 import net.mellow.effortless.blocks.BlockMeta;
 import net.mellow.effortless.blocks.BlockPos;
 import net.mellow.effortless.blocks.PlaceableStack;
 import net.mellow.effortless.buildmode.History.HistoryBlock;
+import net.mellow.effortless.compat.Compat;
 import net.mellow.effortless.compat.CompatAE2;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -22,7 +24,7 @@ public abstract class BaseBuildMode {
 
     public abstract int add(ItemStack stack, ItemStack selected, World world, EntityPlayer player, MovingObjectPosition mop);
     public abstract void clear(ItemStack stack);
-
+    public static boolean hasAE2 = Loader.isModLoaded(Compat.MODID_AE2);
     public int reach(ItemStack stack) {
         return 32;
     }
@@ -66,13 +68,11 @@ public abstract class BaseBuildMode {
                     }
                 }
                 ItemStack stack = getMatchingStack(player, selected);
-                if (CompatAE2.hasAE2 && stack != null){
+                if (hasAE2){
+                    if (stack == null) break;
                     int itemsLeft = stack.stackSize;
-                    if (itemsLeft >= 0) {
-                        FMLLog.info("ae2 ran");
-                        CompatAE2.removeFromNetwork(player, selected);
-                    }
                     if (itemsLeft <=0) break;
+                    CompatAE2.removeFromNetwork(player, selected);
                 }
                 toDeplete.stackSize--;
             }
@@ -113,7 +113,7 @@ public abstract class BaseBuildMode {
                 return stack;
             }
         }
-        if (CompatAE2.hasAE2){
+        if (hasAE2){
             return CompatAE2.findItemInNetwork(selected, player);
         }
         return null;
